@@ -1,0 +1,41 @@
+{
+  "name": "keeperhub-agent-starter",
+  "version": "0.1.0-rehearsal.0",
+  "description": "A safe KeeperHub starter and onboarding doctor for Claude Code, Codex, and Hermes.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "keeperhub-starter": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    ".env.example"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/cli.ts",
+    "doctor": "tsx src/cli.ts doctor",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --exclude tests/integration/**",
+    "test:watch": "vitest",
+    "test:integration": "vitest run tests/integration",
+    "test:secrets": "tsx scripts/secret-scan.ts",
+    "verify": "npm run typecheck && npm run test && npm run build && npm run test:secrets && npm run pack:check",
+    "pack:check": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "commander": "15.0.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.34",
+    "tsx": "4.23.1",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

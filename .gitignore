@@ -1,0 +1,26 @@
+node_modules/
+dist/
+coverage/
+*.tgz
+
+# Credentials and local runtime state
+.env
+.env.*
+!.env.example
+.keeperhub/
+*.pem
+*.key
+wallet.json
+safety.json
+
+# Raw responses and private evidence
+artifacts/private/
+*.raw.json
+*.raw.log
+
+# Local upstream checkout used to prepare patches
+.upstream/
+
+# OS and editor noise
+.DS_Store
+*.swp

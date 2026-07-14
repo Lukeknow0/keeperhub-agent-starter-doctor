@@ -1,0 +1,467 @@
+diff --git a/cmd/doctor/auth_check_test.go b/cmd/doctor/auth_check_test.go
+new file mode 100644
+index 0000000..d50dff6
+--- /dev/null
++++ b/cmd/doctor/auth_check_test.go
+@@ -0,0 +1,195 @@
++package doctor
++
++import (
++	"context"
++	"net/http"
++	"net/http/httptest"
++	"testing"
++	"time"
++
++	"github.com/keeperhub/cli/internal/config"
++	khhttp "github.com/keeperhub/cli/internal/http"
++	"github.com/keeperhub/cli/pkg/cmdutil"
++	"github.com/keeperhub/cli/pkg/iostreams"
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++)
++
++const (
++	testSessionToken = "session-test-token"
++	testAPIKey       = "kh_" + "test_api_key"
++	invalidAPIKey    = "kh_" + "invalid_api_key"
++	validSessionBody = `{"user":{"id":"user_test"},"session":{"id":"session_test","expiresAt":"2099-01-01T00:00:00Z","activeOrganizationId":"org_test"}}`
++	validAPIKeysBody = `{"items":[],"meta":{},"_links":{}}`
++)
++
++func newAuthCheckFactory(t *testing.T, serverURL, token string) *cmdutil.Factory {
++	t.Helper()
++	ios, _, _, _ := iostreams.Test()
++	return &cmdutil.Factory{
++		AppVersion: "1.2.3",
++		IOStreams:  ios,
++		Config: func() (config.Config, error) {
++			return config.Config{DefaultHost: serverURL}, nil
++		},
++		HTTPClient: func() (*khhttp.Client, error) {
++			return khhttp.NewClient(khhttp.ClientOptions{
++				Host:       serverURL,
++				Token:      token,
++				AppVersion: "1.2.3",
++				IOStreams:  ios,
++			}), nil
++		},
++	}
++}
++
++func TestCheckAuthValidSessionUsesFactoryCredentials(t *testing.T) {
++	t.Setenv("KH_API_KEY", "")
++
++	var gotPath, gotAuthorization string
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		gotPath = r.URL.Path
++		gotAuthorization = r.Header.Get("Authorization")
++		w.Header().Set("Content-Type", "application/json")
++		_, _ = w.Write([]byte(validSessionBody))
++	}))
++	defer server.Close()
++
++	result := checkAuth(context.Background(), newAuthCheckFactory(t, server.URL, testSessionToken))
++
++	require.Equal(t, "pass", result.Status)
++	assert.Equal(t, "authenticated", result.Message)
++	assert.Equal(t, "/api/auth/get-session", gotPath)
++	assert.Equal(t, "Bearer "+testSessionToken, gotAuthorization)
++}
++
++func TestCheckAuthRejectsInvalidSessionPayloads(t *testing.T) {
++	t.Setenv("KH_API_KEY", "")
++
++	tests := map[string]string{
++		"empty body":       ``,
++		"null":             `null`,
++		"empty object":     `{}`,
++		"empty array":      `[]`,
++		"empty string":     `""`,
++		"missing session":  `{"user":{"id":"user_test"}}`,
++		"missing user":     `{"session":{"id":"session_test"}}`,
++		"empty identity":   `{"user":{},"session":{}}`,
++		"malformed JSON":   `{"user":`,
++		"trailing JSON":    validSessionBody + `{}`,
++		"trailing garbage": validSessionBody + `not-json`,
++	}
++
++	for name, body := range tests {
++		t.Run(name, func(t *testing.T) {
++			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
++				w.Header().Set("Content-Type", "application/json")
++				_, _ = w.Write([]byte(body))
++			}))
++			defer server.Close()
++
++			result := checkAuth(context.Background(), newAuthCheckFactory(t, server.URL, testSessionToken))
++
++			assert.Equal(t, "warn", result.Status)
++			assert.NotEqual(t, "authenticated", result.Message)
++		})
++	}
++}
++
++func TestCheckAuthRejectsUnauthorizedSession(t *testing.T) {
++	t.Setenv("KH_API_KEY", "")
++
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
++		w.WriteHeader(http.StatusUnauthorized)
++	}))
++	defer server.Close()
++
++	result := checkAuth(context.Background(), newAuthCheckFactory(t, server.URL, "expired-"+testSessionToken))
++
++	assert.Equal(t, "warn", result.Status)
++	assert.Contains(t, result.Message, "not authenticated")
++}
++
++func TestCheckAuthValidAPIKeyUsesProtectedKeysEndpoint(t *testing.T) {
++	t.Setenv("KH_API_KEY", testAPIKey)
++
++	var gotPath, gotAuthorization string
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		gotPath = r.URL.Path
++		gotAuthorization = r.Header.Get("Authorization")
++		w.Header().Set("Content-Type", "application/json")
++		_, _ = w.Write([]byte(validAPIKeysBody))
++	}))
++	defer server.Close()
++
++	result := checkAuth(context.Background(), newAuthCheckFactory(t, server.URL, testAPIKey))
++
++	require.Equal(t, "pass", result.Status)
++	assert.Equal(t, "authenticated (API key)", result.Message)
++	assert.Equal(t, "/api/keys", gotPath)
++	assert.Equal(t, "Bearer "+testAPIKey, gotAuthorization)
++}
++
++func TestCheckAuthRejectsInvalidAPIKey(t *testing.T) {
++	t.Setenv("KH_API_KEY", invalidAPIKey)
++
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
++		w.WriteHeader(http.StatusUnauthorized)
++	}))
++	defer server.Close()
++
++	result := checkAuth(context.Background(), newAuthCheckFactory(t, server.URL, invalidAPIKey))
++
++	assert.Equal(t, "warn", result.Status)
++	assert.Contains(t, result.Message, "not authenticated")
++}
++
++func TestCheckAuthRejectsInvalidAPIKeyPayloads(t *testing.T) {
++	t.Setenv("KH_API_KEY", testAPIKey)
++
++	for name, body := range map[string]string{
++		"empty body":       ``,
++		"null":             `null`,
++		"empty object":     `{}`,
++		"empty array":      `[]`,
++		"empty string":     `""`,
++		"zero":             `0`,
++		"false":            `false`,
++		"missing items":    `{"meta":{},"_links":{}}`,
++		"null items":       `{"items":null,"meta":{},"_links":{}}`,
++		"items not array":  `{"items":{},"meta":{},"_links":{}}`,
++		"malformed JSON":   `[`,
++		"trailing JSON":    validAPIKeysBody + `[]`,
++		"trailing garbage": validAPIKeysBody + `not-json`,
++	} {
++		t.Run(name, func(t *testing.T) {
++			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
++				w.Header().Set("Content-Type", "application/json")
++				_, _ = w.Write([]byte(body))
++			}))
++			defer server.Close()
++
++			result := checkAuth(context.Background(), newAuthCheckFactory(t, server.URL, testAPIKey))
++
++			assert.Equal(t, "warn", result.Status)
++			assert.NotContains(t, result.Message, "authenticated")
++		})
++	}
++}
++
++func TestCheckAuthHonorsContextTimeout(t *testing.T) {
++	t.Setenv("KH_API_KEY", "")
++
++	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
++		<-r.Context().Done()
++	}))
++	defer server.Close()
++
++	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Millisecond)
++	defer cancel()
++
++	result := checkAuth(ctx, newAuthCheckFactory(t, server.URL, testSessionToken))
++
++	assert.Equal(t, "warn", result.Status)
++	assert.Equal(t, "auth check timed out", result.Message)
++}
+diff --git a/cmd/doctor/doctor.go b/cmd/doctor/doctor.go
+index b3fdfa8..3837e1f 100644
+--- a/cmd/doctor/doctor.go
++++ b/cmd/doctor/doctor.go
+@@ -7,6 +7,7 @@ import (
+ 	"fmt"
+ 	"io"
+ 	"net/http"
++	"os"
+ 	"strings"
+ 	"sync"
+ 	"time"
+@@ -119,11 +120,10 @@ func runDoctor(cmd *cobra.Command, f *cmdutil.Factory) error {
+ 	return nil
+ }
+ 
+-// getHTTPClient returns a plain *http.Client for diagnostic health checks.
+-// Doctor needs strict context cancellation semantics; we use a plain client
+-// with no retry so timeouts are respected immediately.
+-func getHTTPClient(_ *cmdutil.Factory) (*http.Client, error) {
+-	return &http.Client{}, nil
++// getHTTPClient returns the shared KeeperHub client so doctor uses the same
++// resolved session token or KH_API_KEY as every other authenticated command.
++func getHTTPClient(f *cmdutil.Factory) (*khhttp.Client, error) {
++	return f.HTTPClient()
+ }
+ 
+ // getHost returns the configured host, falling back to the default.
+@@ -139,16 +139,12 @@ func getHost(f *cmdutil.Factory) (string, error) {
+ 
+ // doGet performs a GET request against url with the given context, returning
+ // the response. The caller is responsible for closing resp.Body.
+-//
+-// host is used to look up per-host headers (hosts.yml + Cloudflare Access env)
+-// so doctor can reach environments behind CF Access.
+-func doGet(ctx context.Context, client *http.Client, host, url string) (*http.Response, error) {
+-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
++func doGet(ctx context.Context, client *khhttp.Client, url string) (*http.Response, error) {
++	req, err := client.NewRequest(http.MethodGet, url, nil)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+-	khhttp.ApplyHostHeaders(req, host)
+-	return client.Do(req)
++	return client.Do(req.WithContext(ctx))
+ }
+ 
+ // isContextTimeout reports whether err resulted from a context timeout.
+@@ -171,8 +167,16 @@ func checkAuth(ctx context.Context, f *cmdutil.Factory) CheckResult {
+ 		return CheckResult{Status: "warn", Message: "could not create HTTP client"}
+ 	}
+ 
+-	url := khhttp.BuildBaseURL(host) + "/api/auth/get-session"
+-	resp, err := doGet(ctx, client, host, url)
++	isAPIKey := strings.HasPrefix(os.Getenv("KH_API_KEY"), "kh_")
++	path := "/api/auth/get-session"
++	if isAPIKey {
++		// /api/workflows may return 200 to unauthenticated requests. /api/keys is
++		// protected and therefore provides a meaningful API-key auth check.
++		path = "/api/keys"
++	}
++
++	url := khhttp.BuildBaseURL(host) + path
++	resp, err := doGet(ctx, client, url)
+ 	if err != nil {
+ 		if isContextTimeout(err) {
+ 			return CheckResult{Status: "warn", Message: "auth check timed out"}
+@@ -180,18 +184,61 @@ func checkAuth(ctx context.Context, f *cmdutil.Factory) CheckResult {
+ 		return CheckResult{Status: "warn", Message: "not authenticated. Run: kh auth login"}
+ 	}
+ 	defer resp.Body.Close()
+-	_, _ = io.Copy(io.Discard, resp.Body)
+ 
+ 	switch resp.StatusCode {
+ 	case http.StatusUnauthorized, http.StatusForbidden:
++		_, _ = io.Copy(io.Discard, resp.Body)
+ 		return CheckResult{Status: "warn", Message: "not authenticated. Run: kh auth login"}
+ 	case http.StatusOK:
++		if isAPIKey {
++			var payload struct {
++				Items []json.RawMessage `json:"items"`
++				Meta  json.RawMessage   `json:"meta"`
++				Links json.RawMessage   `json:"_links"`
++			}
++			if err := decodeSingleJSON(resp.Body, &payload); err != nil || payload.Items == nil {
++				return CheckResult{Status: "warn", Message: "could not verify auth status"}
++			}
++			return CheckResult{Status: "pass", Message: "authenticated (API key)"}
++		}
++
++		var payload struct {
++			User *struct {
++				ID string `json:"id"`
++			} `json:"user"`
++			Session *struct {
++				ID string `json:"id"`
++			} `json:"session"`
++		}
++		if err := decodeSingleJSON(resp.Body, &payload); err != nil ||
++			payload.User == nil || payload.User.ID == "" ||
++			payload.Session == nil || payload.Session.ID == "" {
++			return CheckResult{Status: "warn", Message: "not authenticated. Run: kh auth login"}
++		}
+ 		return CheckResult{Status: "pass", Message: "authenticated"}
+ 	default:
++		_, _ = io.Copy(io.Discard, resp.Body)
+ 		return CheckResult{Status: "warn", Message: "could not verify auth status"}
+ 	}
+ }
+ 
++// decodeSingleJSON rejects empty, malformed, or multi-value response bodies.
++func decodeSingleJSON(r io.Reader, target any) error {
++	decoder := json.NewDecoder(r)
++	if err := decoder.Decode(target); err != nil {
++		return err
++	}
++
++	var extra json.RawMessage
++	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
++		if err == nil {
++			return errors.New("response contains multiple JSON values")
++		}
++		return err
++	}
++	return nil
++}
++
+ // checkAPI checks whether the KeeperHub API host is reachable, measuring latency.
+ func checkAPI(ctx context.Context, f *cmdutil.Factory) CheckResult {
+ 	host, err := getHost(f)
+@@ -206,7 +253,7 @@ func checkAPI(ctx context.Context, f *cmdutil.Factory) CheckResult {
+ 
+ 	url := khhttp.BuildBaseURL(host) + "/api/health"
+ 	start := time.Now()
+-	resp, err := doGet(ctx, client, host, url)
++	resp, err := doGet(ctx, client, url)
+ 	latency := time.Since(start)
+ 
+ 	if err != nil {
+@@ -238,7 +285,7 @@ func checkWallet(ctx context.Context, f *cmdutil.Factory) CheckResult {
+ 	}
+ 
+ 	url := khhttp.BuildBaseURL(host) + "/api/user/wallet/balances"
+-	resp, err := doGet(ctx, client, host, url)
++	resp, err := doGet(ctx, client, url)
+ 	if err != nil {
+ 		if isContextTimeout(err) {
+ 			return CheckResult{Status: "warn", Message: "wallet check timed out"}
+@@ -281,7 +328,7 @@ func checkSpendCap(ctx context.Context, f *cmdutil.Factory) CheckResult {
+ 	}
+ 
+ 	url := khhttp.BuildBaseURL(host) + "/api/billing/subscription"
+-	resp, err := doGet(ctx, client, host, url)
++	resp, err := doGet(ctx, client, url)
+ 	if err != nil {
+ 		if isContextTimeout(err) {
+ 			return CheckResult{Status: "warn", Message: "spend cap check timed out"}
+@@ -333,7 +380,7 @@ func checkChains(ctx context.Context, f *cmdutil.Factory) CheckResult {
+ 	}
+ 
+ 	url := khhttp.BuildBaseURL(host) + "/api/chains"
+-	resp, err := doGet(ctx, client, host, url)
++	resp, err := doGet(ctx, client, url)
+ 	if err != nil {
+ 		if isContextTimeout(err) {
+ 			return CheckResult{Status: "fail", Message: "could not reach chain service (timeout after 5s)"}
+diff --git a/cmd/doctor/doctor_test.go b/cmd/doctor/doctor_test.go
+index fbab9da..5f88b08 100644
+--- a/cmd/doctor/doctor_test.go
++++ b/cmd/doctor/doctor_test.go
+@@ -17,17 +17,19 @@ import (
+ )
+ 
+ // newDoctorFactory builds a Factory backed by a test HTTP server.
+-func newDoctorFactory(ios *iostreams.IOStreams, svr *httptest.Server) *cmdutil.Factory {
++func newDoctorFactory(t *testing.T, ios *iostreams.IOStreams, svr *httptest.Server) *cmdutil.Factory {
++	t.Helper()
++	t.Setenv("KH_API_KEY", "")
+ 	return &cmdutil.Factory{
+ 		AppVersion: "1.2.3",
+-		IOStreams:   ios,
++		IOStreams:  ios,
+ 		Config: func() (config.Config, error) {
+ 			return config.Config{DefaultHost: svr.URL}, nil
+ 		},
+ 		HTTPClient: func() (*khhttp.Client, error) {
+ 			return khhttp.NewClient(khhttp.ClientOptions{
+ 				AppVersion: "1.2.3",
+-				IOStreams:   ios,
++				IOStreams:  ios,
+ 			}), nil
+ 		},
+ 	}
+@@ -40,6 +42,9 @@ func TestDoctorCmd_AllPass(t *testing.T) {
+ 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+ 		w.Header().Set("Content-Type", "application/json")
+ 		switch r.URL.Path {
++		case "/api/auth/get-session":
++			w.WriteHeader(http.StatusOK)
++			_, _ = w.Write([]byte(`{"user":{"id":"user_test"},"session":{"id":"session_test"}}`))
+ 		case "/api/health":
+ 			w.WriteHeader(http.StatusOK)
+ 			_, _ = w.Write([]byte(`{"status":"ok"}`))
+@@ -60,7 +65,7 @@ func TestDoctorCmd_AllPass(t *testing.T) {
+ 	defer svr.Close()
+ 
+ 	ios, outBuf, _, _ := iostreams.Test()
+-	f := newDoctorFactory(ios, svr)
++	f := newDoctorFactory(t, ios, svr)
+ 
+ 	tc := doctor.NewTestableCmd(f)
+ 	err := tc.Execute([]string{})
+@@ -101,7 +106,7 @@ func TestDoctorCmd_OneFail(t *testing.T) {
+ 	defer svr.Close()
+ 
+ 	ios, outBuf, _, _ := iostreams.Test()
+-	f := newDoctorFactory(ios, svr)
++	f := newDoctorFactory(t, ios, svr)
+ 
+ 	tc := doctor.NewTestableCmd(f)
+ 	err := tc.Execute([]string{})
+@@ -138,7 +143,7 @@ func TestDoctorCmd_WarnOnly(t *testing.T) {
+ 	defer svr.Close()
+ 
+ 	ios, outBuf, _, _ := iostreams.Test()
+-	f := newDoctorFactory(ios, svr)
++	f := newDoctorFactory(t, ios, svr)
+ 
+ 	tc := doctor.NewTestableCmd(f)
+ 	err := tc.Execute([]string{})
+@@ -176,7 +181,7 @@ func TestDoctorCmd_JSON(t *testing.T) {
+ 	defer svr.Close()
+ 
+ 	ios, outBuf, _, _ := iostreams.Test()
+-	f := newDoctorFactory(ios, svr)
++	f := newDoctorFactory(t, ios, svr)
+ 
+ 	tc := doctor.NewTestableCmd(f)
+ 	err := tc.Execute([]string{"--json"})
+@@ -221,7 +226,7 @@ func TestDoctorCmd_Timeout(t *testing.T) {
+ 	defer svr.Close()
+ 
+ 	ios, outBuf, _, _ := iostreams.Test()
+-	f := newDoctorFactory(ios, svr)
++	f := newDoctorFactory(t, ios, svr)
+ 
+ 	start := time.Now()
+ 	tc := doctor.NewTestableCmd(f)
+@@ -245,7 +250,7 @@ func TestDoctorCmd_Output(t *testing.T) {
+ 	defer svr.Close()
+ 
+ 	ios, outBuf, _, _ := iostreams.Test()
+-	f := newDoctorFactory(ios, svr)
++	f := newDoctorFactory(t, ios, svr)
+ 
+ 	tc := doctor.NewTestableCmd(f)
+ 	_ = tc.Execute([]string{})
+@@ -283,7 +288,7 @@ func TestDoctorCmd_ExitCodeOnFail(t *testing.T) {
+ 	defer svr.Close()
+ 
+ 	ios, _, _, _ := iostreams.Test()
+-	f := newDoctorFactory(ios, svr)
++	f := newDoctorFactory(t, ios, svr)
+ 
+ 	tc := doctor.NewTestableCmd(f)
+ 	err := tc.Execute([]string{})

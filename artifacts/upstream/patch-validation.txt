@@ -1,0 +1,18 @@
+Recorded: 2026-07-14T15:49:13+08:00
+Patch: patches/keeperhub-cli-doctor-auth-v0.10.0.patch
+Patch SHA-256: aa6743d8c765580c4c8f9c97d30afe33c8fddf0a93f3cac4d91fc36000ce6d66
+Clean base: v0.10.0 / 56d28630e3ad49fd0681a8afae7b7c6c1cf8b512
+
+git apply --check: PASS
+git apply: PASS
+git diff --check: PASS
+go test ./cmd/doctor -count=1: PASS
+go test ./... -count=1: PASS
+
+Regression proof against the unmodified base:
+- The new tests were added without the implementation changes.
+- `go test ./cmd/doctor -run 'TestCheckAuth' -count=1` exited 1 as expected.
+- Failures reproduced the missing Authorization header, false passes for empty, scalar, structurally invalid, malformed, and multi-value HTTP 200 responses, and API-key use of `/api/auth/get-session` instead of `/api/keys`.
+- The raw negative log was intentionally not retained because assertion diagnostics include synthetic credential fixtures.
+
+No network request targeted KeeperHub, no transaction endpoint was called, and no real credential was used or recorded during patch validation.

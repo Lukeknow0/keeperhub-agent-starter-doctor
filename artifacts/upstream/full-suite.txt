@@ -1,0 +1,40 @@
+Recorded: 2026-07-14T15:49:13+08:00
+Base: KeeperHub CLI v0.10.0 (56d28630e3ad49fd0681a8afae7b7c6c1cf8b512)
+Patch SHA-256: aa6743d8c765580c4c8f9c97d30afe33c8fddf0a93f3cac4d91fc36000ce6d66
+Go: go1.26.3 darwin/arm64
+Command: go test ./... -count=1
+
+ok  github.com/keeperhub/cli/cmd  0.447s
+ok  github.com/keeperhub/cli/cmd/action  0.844s
+ok  github.com/keeperhub/cli/cmd/auth  1.258s
+ok  github.com/keeperhub/cli/cmd/billing  1.680s
+ok  github.com/keeperhub/cli/cmd/chain  9.046s
+ok  github.com/keeperhub/cli/cmd/completion  2.407s
+?   github.com/keeperhub/cli/cmd/config  [no test files]
+ok  github.com/keeperhub/cli/cmd/doctor  19.617s
+ok  github.com/keeperhub/cli/cmd/execute  11.104s
+ok  github.com/keeperhub/cli/cmd/help  3.377s
+?   github.com/keeperhub/cli/cmd/kh  [no test files]
+ok  github.com/keeperhub/cli/cmd/org  3.696s
+ok  github.com/keeperhub/cli/cmd/project  3.860s
+ok  github.com/keeperhub/cli/cmd/protocol  17.886s
+ok  github.com/keeperhub/cli/cmd/read  3.861s
+ok  github.com/keeperhub/cli/cmd/run  9.863s
+ok  github.com/keeperhub/cli/cmd/serve  10.496s
+ok  github.com/keeperhub/cli/cmd/tag  2.910s
+ok  github.com/keeperhub/cli/cmd/template  2.908s
+ok  github.com/keeperhub/cli/cmd/update  2.899s
+?   github.com/keeperhub/cli/cmd/version  [no test files]
+ok  github.com/keeperhub/cli/cmd/wallet  2.508s
+ok  github.com/keeperhub/cli/cmd/workflow  3.866s
+ok  github.com/keeperhub/cli/internal/auth  6.703s
+ok  github.com/keeperhub/cli/internal/cache  1.615s
+ok  github.com/keeperhub/cli/internal/config  1.572s
+ok  github.com/keeperhub/cli/internal/http  0.786s
+ok  github.com/keeperhub/cli/internal/output  0.876s
+ok  github.com/keeperhub/cli/internal/rpc  1.187s
+?   github.com/keeperhub/cli/internal/version  [no test files]
+ok  github.com/keeperhub/cli/pkg/cmdutil  1.075s
+ok  github.com/keeperhub/cli/pkg/iostreams  1.062s
+
+Result: PASS

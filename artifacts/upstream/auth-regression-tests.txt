@@ -1,0 +1,70 @@
+Recorded: 2026-07-14T15:49:13+08:00
+Base: KeeperHub CLI v0.10.0 (56d28630e3ad49fd0681a8afae7b7c6c1cf8b512)
+Patch SHA-256: aa6743d8c765580c4c8f9c97d30afe33c8fddf0a93f3cac4d91fc36000ce6d66
+Go: go1.26.3 darwin/arm64
+Command: go test ./cmd/doctor -run '^TestCheckAuth' -count=1 -v
+
+=== RUN   TestCheckAuthValidSessionUsesFactoryCredentials
+--- PASS: TestCheckAuthValidSessionUsesFactoryCredentials (0.00s)
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/empty_object
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/empty_array
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/missing_user
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/empty_identity
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/trailing_JSON
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/trailing_garbage
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/empty_body
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/null
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/empty_string
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/missing_session
+=== RUN   TestCheckAuthRejectsInvalidSessionPayloads/malformed_JSON
+--- PASS: TestCheckAuthRejectsInvalidSessionPayloads (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/empty_object (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/empty_array (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/missing_user (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/empty_identity (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/trailing_JSON (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/trailing_garbage (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/empty_body (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/null (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/empty_string (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/missing_session (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidSessionPayloads/malformed_JSON (0.00s)
+=== RUN   TestCheckAuthRejectsUnauthorizedSession
+--- PASS: TestCheckAuthRejectsUnauthorizedSession (0.00s)
+=== RUN   TestCheckAuthValidAPIKeyUsesProtectedKeysEndpoint
+--- PASS: TestCheckAuthValidAPIKeyUsesProtectedKeysEndpoint (0.00s)
+=== RUN   TestCheckAuthRejectsInvalidAPIKey
+--- PASS: TestCheckAuthRejectsInvalidAPIKey (0.00s)
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/malformed_JSON
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/trailing_JSON
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/trailing_garbage
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/null
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/empty_object
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/empty_array
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/false
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/missing_items
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/null_items
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/items_not_array
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/empty_body
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/empty_string
+=== RUN   TestCheckAuthRejectsInvalidAPIKeyPayloads/zero
+--- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/malformed_JSON (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/trailing_JSON (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/trailing_garbage (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/null (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/empty_object (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/empty_array (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/false (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/missing_items (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/null_items (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/items_not_array (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/empty_body (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/empty_string (0.00s)
+    --- PASS: TestCheckAuthRejectsInvalidAPIKeyPayloads/zero (0.00s)
+=== RUN   TestCheckAuthHonorsContextTimeout
+--- PASS: TestCheckAuthHonorsContextTimeout (0.03s)
+PASS
+ok  github.com/keeperhub/cli/cmd/doctor  0.263s
