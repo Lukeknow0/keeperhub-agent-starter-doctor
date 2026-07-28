@@ -20,7 +20,7 @@ export function createProgram(dependencies: ProgramDependencies = {}): Command {
   const program = new Command()
     .name("keeperhub-starter")
     .description("KeeperHub Agent Starter + Doctor")
-    .version("0.1.0-rehearsal.0")
+    .version("0.1.0")
     .showHelpAfterError()
     .exitOverride()
     .configureOutput({

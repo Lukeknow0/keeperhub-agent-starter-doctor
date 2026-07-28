@@ -2,7 +2,7 @@
 
 A safety-first TypeScript starter for taking Claude Code, Codex, or Hermes from a fresh machine to an authenticated KeeperHub dry-run, with actionable diagnostics and a human-confirmed conditional bounty release path.
 
-> Pre-event disclosure: this repository is currently a private rehearsal baseline created before the Agents Onchain build window. It must not be published or submitted before the later displayed opening time, **2026-07-27 19:01 Asia/Shanghai**. The transaction below is onboarding evidence, not the final hackathon transaction.
+> Provenance disclosure: the private pre-event research and implementation baseline is preserved at tag `pre-event-rehearsal` (commit `c4d7d2a38e5dea9d607913a384cdf168aec78e9c`). Submission work is developed transparently on `hackathon/submission` after the conservative opening boundary. The earlier transaction remains onboarding evidence and is never represented as the final hackathon transaction.
 
 ## What it does
 
@@ -18,7 +18,7 @@ A safety-first TypeScript starter for taking Claude Code, Codex, or Hermes from 
 - Node.js `>=22.12.0` and npm.
 - A KeeperHub organization with an explicitly verified **EOA** organization wallet. Safe wallet semantics are intentionally blocked because the documented simulator uses the organization EOA as `from`.
 - A KeeperHub organization API key with the official `kh_` prefix. Webhook keys with `wfb_` are not interchangeable.
-- Ethereum Sepolia (`11155111`) during rehearsal. Mainnet execution is disabled.
+- Ethereum Sepolia (`11155111`) for this Sepolia submission. Mainnet execution is disabled.
 
 ## Quick start
 
@@ -197,7 +197,7 @@ The mergeable upstream Doctor patch, regression evidence, and PR draft live unde
 - Any change to chain, wallet, recipient, amount, condition, or simulation invalidates the prior digest and confirmation.
 - Automatic retries are permitted only for the identical body and persisted idempotency key.
 - Unknown execution state is treated as ambiguous; the program never creates a replacement key automatically.
-- Mainnet and Safe execution are blocked in the rehearsal build.
+- Mainnet and Safe execution are blocked in the release workflow.
 - The time lock and TTY gate are CLI safety controls, not an operating-system
   sandbox. Exported library primitives accept test dependency injection, and
   `KeeperHubClient.executeTransfer` is a low-level broadcast primitive. Do not

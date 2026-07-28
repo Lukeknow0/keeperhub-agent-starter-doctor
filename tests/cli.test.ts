@@ -7,6 +7,19 @@ describe("CLI error contract", () => {
     process.exitCode = undefined;
   });
 
+  it("reports the public submission version", async () => {
+    let stdout = "";
+    vi.spyOn(process.stdout, "write").mockImplementation(((chunk: string | Uint8Array) => {
+      stdout += String(chunk);
+      return true;
+    }) as typeof process.stdout.write);
+
+    const code = await main(["node", "keeperhub-starter", "--version"]);
+
+    expect(code).toBe(0);
+    expect(stdout.trim()).toBe("0.1.0");
+  });
+
   it("returns usage code 2 and always prints Step/Cause/Fix/Evidence", async () => {
     let stderr = "";
     vi.spyOn(process.stderr, "write").mockImplementation(((chunk: string | Uint8Array) => {

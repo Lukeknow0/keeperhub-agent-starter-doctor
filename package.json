@@ -1,6 +1,6 @@
 {
   "name": "keeperhub-agent-starter",
-  "version": "0.1.0-rehearsal.0",
+  "version": "0.1.0",
   "description": "A safe KeeperHub starter and onboarding doctor for Claude Code, Codex, and Hermes.",
   "type": "module",
   "private": true,
