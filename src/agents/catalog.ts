@@ -21,7 +21,16 @@ const definitions: Record<AgentName, AgentDefinition> = {
     setupCommands: (executable) => [
       command(
         executable,
-        ["mcp", "add", "--transport", "http", "keeperhub", KEEPERHUB_MCP_URL],
+        [
+          "mcp",
+          "add",
+          "--transport",
+          "http",
+          "--scope",
+          "project",
+          "keeperhub",
+          KEEPERHUB_MCP_URL
+        ],
         "Add the official KeeperHub hosted MCP server"
       )
     ],

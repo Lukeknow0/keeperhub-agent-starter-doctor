@@ -54,7 +54,7 @@ describe("agent setup", () => {
     expect(mock.invocations).toHaveLength(3);
     expect(report.agents.flatMap((item) => item.steps).every((step) => step.status === "not-run")).toBe(true);
     expect(report.agents[0]?.commands).toEqual([
-      "claude mcp add --transport http keeperhub https://app.keeperhub.com/mcp"
+      "claude mcp add --transport http --scope project keeperhub https://app.keeperhub.com/mcp"
     ]);
     expect(report.agents[1]?.commands).toEqual([
       "codex mcp add keeperhub --url https://app.keeperhub.com/mcp",
@@ -183,7 +183,7 @@ describe("agent setup", () => {
 
     const output = formatSetupReport(report);
     expect(output).toContain("KeeperHub agent setup (PREVIEW)");
-    expect(output).toContain("claude mcp add --transport http keeperhub https://app.keeperhub.com/mcp");
+    expect(output).toContain("claude mcp add --transport http --scope project keeperhub https://app.keeperhub.com/mcp");
     expect(output).toContain("run /mcp");
   });
 
