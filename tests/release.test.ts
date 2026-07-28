@@ -130,6 +130,50 @@ function executeInput(paths: Awaited<ReturnType<typeof prepared>>) {
 }
 
 describe("conditional release", () => {
+  it("rejects a non-EOA wallet at the preparation boundary before KeeperHub side effects", async () => {
+    const getChain = vi.fn(async (chainId: number) => ({
+      chainId,
+      enabled: true,
+      isTestnet: true,
+      name: "Ethereum Sepolia"
+    }));
+    const getWallet = vi.fn(async () => ({ walletAddress: WALLET }));
+    const simulateTransfer = vi.fn(async (request: TransferSimulationRequest) => ({
+      success: true,
+      from: WALLET,
+      to: request.recipientAddress,
+      value: "1000000000000",
+      gasEstimate: "21000",
+      wouldRevert: false
+    }));
+    const runtime: ReleaseRuntime = {
+      client: fakeClient({ getChain, getWallet, simulateTransfer }),
+      workspace: tmpdir(),
+      now: () => AFTER_OPEN,
+      randomUUID: () => UUID,
+      sleep: async () => undefined
+    };
+
+    const result = prepareRelease({
+      conditionFile: "unread.txt",
+      expectedSha256: digest("unread"),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "safe",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, runtime);
+
+    await expect(result).rejects.toBeInstanceOf(UsageError);
+    await expect(result).rejects.toMatchObject({
+      message: "Release execution requires an explicitly asserted EOA wallet."
+    });
+    expect(getChain).not.toHaveBeenCalled();
+    expect(getWallet).not.toHaveBeenCalled();
+    expect(simulateTransfer).not.toHaveBeenCalled();
+  });
+
   it("keeps condition paths inside the workspace and prepares a ten-minute plan", async () => {
     const paths = await prepared();
     const plan = JSON.parse(await readFile(join(paths.workspace, paths.planPath), "utf8")) as {
