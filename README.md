@@ -146,8 +146,11 @@ npm test
 npm run build
 npm run test:secrets
 npm run pack:check
+npm run test:package
 npm run verify
 ```
+
+`npm run test:package` creates a fresh tarball, installs it beneath a temporary prefix with lifecycle scripts disabled, and checks the packaged CLI version and setup help. The secret-free CI workflow runs `npm ci` followed by `npm run verify` on Node.js 22.22.3.
 
 The optional online integration suite performs only authenticated reads, an MCP documentation call, and a guarded `simulate: true` request:
 
