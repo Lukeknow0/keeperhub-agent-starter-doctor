@@ -4,6 +4,123 @@ A safety-first TypeScript starter for taking Claude Code, Codex, or Hermes from 
 
 > Provenance disclosure: the private pre-event research and implementation baseline is preserved at tag `pre-event-rehearsal` (commit `c4d7d2a38e5dea9d607913a384cdf168aec78e9c`). Submission work is developed transparently on `hackathon/submission` after the conservative opening boundary. The earlier transaction remains onboarding evidence and is never represented as the final hackathon transaction.
 
+## Hackathon submission
+
+KeeperHub Agent Starter + Doctor turns a fragile, multi-Agent onboarding path into a short, diagnosable route from clean clone to authenticated read-only proof and a human-controlled conditional Sepolia release.
+
+**Best Onboarding UX Improvement fit:** the project combines copyable setup adapters, a structured `Step / Cause / Fix / Evidence` Doctor, a reproducible blocker teardown, and a safety workflow toward a final transaction without hiding authentication, wallet, or retry state. It also targets the main prize through KeeperHub execution, strict simulation, exact human approval, idempotent recovery, KeeperHub completion validation, and a tamper-evident audit trail. Independent public explorer/RPC receipt verification remains a separate final-submission checkpoint.
+
+### Verified three-Agent support
+
+| Agent | Official path | Verified result | Write boundary during evidence |
+| --- | --- | --- | --- |
+| Claude Code 2.1.207 | Hosted KeeperHub MCP with project-scoped setup and browser OAuth | Authenticated read-only `tools_documentation` invocation passed | Prompt-scoped to read-only; write tools were not structurally withheld |
+| Codex CLI 0.144.3 | Hosted KeeperHub MCP with browser OAuth | Authenticated read-only `tools_documentation` invocation passed | Prompt-scoped to read-only; write tools were not structurally withheld |
+| Hermes Agent 0.19.0 | Official `KeeperHub/hermes-plugin` with `KH_API_KEY` in the environment | Authenticated read-only `kh_tools_documentation` invocation passed | Structural: `KEEPERHUB_ENABLE_WRITES` was unset, so ten write/execute tools were not registered |
+
+Full evidence and its limitations are in [the onboarding matrix](docs/submission/onboarding-evidence.md).
+
+### Five-command clean-clone preview, then authentication and Doctor
+
+```bash
+git clone <repository-url> keeperhub-agent-starter-doctor
+cd keeperhub-agent-starter-doctor
+npm ci
+npm run build
+node dist/cli.js setup --agent all
+```
+
+`Repository URL: Pending — requires the separately authorized publication checkpoint.`
+
+Those five commands end at a non-mutating setup preview. Review it, apply only the Agent path you need, complete its documented OAuth/API-key authentication, then run Doctor:
+
+```bash
+node dist/cli.js setup --agent <claude|codex|hermes> --apply
+node dist/cli.js doctor --agent <claude|codex|hermes> --chain-id 11155111
+```
+
+A deterministic macOS missing/blank-`KH_API_KEY` check formats exactly as below. This is a sanitized local fixture, not live KeeperHub output:
+
+```text
+[FAIL] KH_API_KEY: Organization API key is missing or has the wrong prefix.
+  Cause: Direct execution and authenticated MCP require an organization key with the kh_ prefix.
+  Fix:
+    cp .env.example .env && chmod 600 .env
+    open https://app.keeperhub.com
+  Evidence:
+    present: false
+    expectedPrefix: kh_
+    valuePrinted: false
+```
+
+The copied `.env` is blank by design. Fill it locally, keep mode `0600`, and never display or commit the key.
+
+Doctor verifies configuration, a protected REST read, authenticated MCP `tools_documentation`, Sepolia, public wallet/balance data, and a strict `simulate: true` self-transfer. It never broadcasts.
+
+### Conditional release evidence path
+
+The supported safety workflow is:
+
+```text
+file-sha256 condition
+  → strict KeeperHub simulation
+  → exact real-TTY human confirmation
+  → exclusive mode-0600 state
+  → same-body/same-key retry or status polling
+  → KeeperHub completion evidence validation
+  → independent public explorer/RPC receipt verification
+  → redacted hash-chain audit
+```
+
+Prepare against the immutable submission condition:
+
+```bash
+shasum -a 256 artifacts/submission/release-condition.json
+# expected: 2cfae70f499548b2a1fd3a5b75c87ba597dacf82b63b4c9c066bc451b9042a46
+
+node dist/cli.js release prepare \
+  --condition-file artifacts/submission/release-condition.json \
+  --expected-sha256 2cfae70f499548b2a1fd3a5b75c87ba597dacf82b63b4c9c066bc451b9042a46 \
+  --recipient <separately-approved-recipient> \
+  --amount 0.000001 \
+  --chain-id 11155111 \
+  --wallet-type eoa
+```
+
+The condition binds verification/onboarding evidence from source commit `afcf7028a7fe365760f7df5d76cf64b3e1f80923`. The organization wallet address is `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`; its Turnkey EOA semantics and absence of a configured Safe are established by official Turnkey documentation plus independent authenticated UI proof, not by Doctor alone.
+
+After a separately authorized exact-summary checkpoint:
+
+```bash
+node dist/cli.js release execute --wallet-type eoa
+node dist/cli.js release retry
+node dist/cli.js release status --poll
+node dist/cli.js audit verify audit/release.jsonl
+```
+
+- Final recipient: **Pending — not supplied.**
+- Final signing/execution: **Pending — requires the separately authorized checkpoint.**
+- Final transaction hash and explorer link: **Pending — no final transaction exists.**
+- Public repository: **Pending — requires the separately authorized publication checkpoint.**
+- Demo video: **Pending — requires a compliant final execution and separately authorized upload checkpoint.**
+- DoraHacks submission and bounty application: **Pending — eligibility remains unresolved and each action requires its own checkpoint.**
+
+The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d8df6352` is **pre-event onboarding evidence only**. It is not a final-transaction value.
+
+### Judge map
+
+- [Architecture](docs/submission/architecture.md) and [security model](docs/submission/security.md)
+- [Verification evidence](artifacts/submission/verification.md) — frozen historical gate: 8 files / 62 tests
+- [Current offline delivery gate](artifacts/submission/delivery-gate.md) — 65/65 tests, package smoke, history secret scan, and provenance checks
+- Current local gate after the isolated condition-generator increment: 9 test files / 65 tests, including 3 Git-process generator tests
+- Local verification: `npm run verify`; focused secret check: `node --experimental-strip-types scripts/secret-scan.ts`
+- [Ranked blockers and bounty copy](docs/submission/bounty-copy.md)
+- [Historical patch evidence](artifacts/upstream/README.md) and [PR #75 resolution](docs/upstream-pr-draft.md)
+- [Two-to-three-minute demo script](docs/submission/demo-script.md)
+- [DoraHacks copy](docs/submission/dorahacks-copy.md)
+
+The historical Doctor patch/tests were independently recorded against KeeperHub CLI v0.10.0 on 2026-07-14. Equivalent official [KeeperHub/cli PR #75](https://github.com/KeeperHub/cli/pull/75) later merged at `72f68896aea6a792edd149d4ad42f90251eca332`; no duplicate PR was opened, and this project claims neither authorship nor influence.
+
 ## What it does
 
 - Previews or applies the current official KeeperHub connection commands for Claude Code, Codex, and Hermes.
@@ -88,7 +205,7 @@ node dist/cli.js release prepare \
 
 `prepare` writes a ten-minute intent plan containing the public wallet address, condition digest, from/to, exact amount, Gas estimate, and simulation digests. It does not sign or broadcast.
 
-After the event window opens, execution remains interactive:
+Only after the compliance blockers are resolved and a separately authorized exact-summary checkpoint is granted does execution remain interactive:
 
 ```bash
 node dist/cli.js release execute --wallet-type eoa
@@ -160,7 +277,7 @@ npm run test:integration
 
 Any integration transfer body without strict boolean `simulate: true` is rejected locally before it can reach KeeperHub. Broadcast behavior is tested only against local fixtures before the event.
 
-## Verified onboarding evidence
+## Pre-event onboarding transaction evidence — not final
 
 - Organization wallet type: Turnkey EOA.
 - Public wallet: `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`.
@@ -178,22 +295,22 @@ This transaction occurred before the event and is not represented as the final s
 | --- | --- | --- | --- |
 | P0 | Device verification requires an undocumented claim request | Confirm page rejects the code until `GET /api/auth/device?user_code=...` occurs | Document or automate the claim step |
 | P0 | Device login reports success with an unusable session | CLI prints success, then `kh auth status` fails and `get-session` returns `null` | Validate before persisting/reporting success |
-| P0 | `kh doctor` reports authenticated for HTTP 200 `null` | Run Doctor with the unusable device token | Parse and validate the session body |
-| P1 | Doctor protected checks omit Bearer auth | Use a valid `KH_API_KEY`; wallet and Spend Cap still say authentication required | Reuse the authenticated CLI HTTP client |
+| P0 | `kh doctor` reports authenticated for HTTP 200 `null` | Independently reproduced on 2026-07-14; official equivalent fix later merged in [PR #75](https://github.com/KeeperHub/cli/pull/75) | Resolved upstream with a protected credential probe |
+| P1 | Doctor protected checks omit Bearer auth | Independently reproduced on 2026-07-14; [PR #75](https://github.com/KeeperHub/cli/pull/75) now resolves/sends `Authorization` | Resolved upstream with authenticated client/probe handling |
 | P1 | Hermes direct OAuth connects with zero tools | Add hosted MCP with OAuth; logs show an async-lock exception | Recommend/fix the official plugin path |
 | P1 | Wallet balance decoder expects string `chainId` | Live API returns a numeric `chainId` | Accept number or string |
 | P1 | Wallet field mismatch | Doctor expects `address`; live response uses `walletAddress` | Parse the live field with compatibility fallback |
 | P1 | macOS Gatekeeper rejects the release binary | Install with Homebrew and run the binary | Correct signing/notarization |
 | P2 | Insufficient balance simulation is opaque | Simulate an amount above the wallet balance | Surface a clear balance diagnosis |
 | P2 | `KH_CONFIG_DIR` is documented but ignored | Set it during login; files still go to the XDG directory | Implement or remove it |
-| P2 | A public workflow probe can return 200 unauthenticated | Call `/api/workflows?limit=1` without a key | Do not use it as an API-key validity check |
+| P2 | A public workflow probe can return 200 unauthenticated | Independently reproduced on 2026-07-14; [PR #75](https://github.com/KeeperHub/cli/pull/75) uses protected `/api/projects` instead | Resolved upstream with the shared protected credential probe |
 
-The mergeable upstream Doctor patch, regression evidence, and PR draft live under `patches/`, `artifacts/upstream/`, and `docs/`. Nothing is submitted externally without a separate confirmation during the official judging window.
+The Doctor issue was independently reproduced and patched locally on 2026-07-14 against v0.10.0. An equivalent official fix later merged as [KeeperHub/cli PR #75](https://github.com/KeeperHub/cli/pull/75) (`72f68896aea6a792edd149d4ad42f90251eca332`), so no duplicate external PR was opened. The historical v0.10.0 patch and tests remain preserved evidence under `patches/` and `artifacts/upstream/`; see `docs/upstream-pr-draft.md` for the upstream-resolution record.
 
 ## Security boundaries
 
 - No private key, seed phrase, wallet signature material, OAuth token, or HMAC secret is accepted or displayed.
-- `KH_API_KEY` is read only from the process environment or a mode-`0600` ignored `.env`.
+- `KH_API_KEY` is read from the process environment, which may optionally be populated by the ignored mode-`0600` `.env` loader; it is never accepted as a CLI argument or printed.
 - Agent setup is preview-only unless `--apply` is explicit.
 - Hermes write tools are not enabled by this starter.
 - Simulation never counts as authorization to broadcast.

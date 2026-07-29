@@ -1,17 +1,23 @@
-# KeeperHub CLI Doctor patch evidence
+# KeeperHub CLI Doctor evidence archive
 
-This directory contains sanitized, locally generated evidence for the unsubmitted KeeperHub CLI patch based on `v0.10.0`.
+## Current upstream resolution (2026-07-29)
 
-| Artifact | Purpose |
+**An equivalent official fix is merged upstream; no duplicate patch or external PR should be opened.** [KeeperHub/cli PR #75](https://github.com/KeeperHub/cli/pull/75), `fix: KEEP-1049 validate credentials against an endpoint that requires auth`, merged on 2026-07-28 at `72f68896aea6a792edd149d4ad42f90251eca332`. The current read-only base is [`ef71237aecf9f448f65f808b859423bd99618149`](https://github.com/KeeperHub/cli/commit/ef71237aecf9f448f65f808b859423bd99618149), release 0.13.1.
+
+PR #75 resolves the core onboarding issue by resolving/sending `Authorization` and using the protected shared `/api/projects` credential probe for Doctor and API-key validation, instead of anonymous-tolerant `/api/auth/get-session` or `/api/workflows`. The current sources are [Doctor](https://github.com/KeeperHub/cli/blob/ef71237aecf9f448f65f808b859423bd99618149/cmd/doctor/doctor.go), [token resolution](https://github.com/KeeperHub/cli/blob/ef71237aecf9f448f65f808b859423bd99618149/internal/auth/token.go), [probe](https://github.com/KeeperHub/cli/blob/ef71237aecf9f448f65f808b859423bd99618149/internal/http/credential_probe.go), and [probe tests](https://github.com/KeeperHub/cli/blob/ef71237aecf9f448f65f808b859423bd99618149/internal/http/credential_probe_test.go).
+
+The files below remain sanitized **historical local evidence**, generated on 2026-07-14 against v0.10.0. They are not output from v0.13.1 and do not establish authorship, submission, or influence on PR #75.
+
+| Artifact | Historical purpose |
 | --- | --- |
 | `auth-regression-tests.txt` | Focused session, API-key, response-validation, header, 401, and timeout tests |
-| `full-suite.txt` | Full upstream Go test result after applying the patch to a clean checkout |
-| `patch-validation.txt` | Base revision, checksum, clean-apply checks, and negative regression summary |
+| `full-suite.txt` | Full Go test result after applying the historical patch to a clean v0.10.0 checkout |
+| `patch-validation.txt` | v0.10.0 base, checksum, clean-apply checks, and negative regression summary |
 
-Related deliverables:
+Related records:
 
-- Patch: `patches/keeperhub-cli-doctor-auth-v0.10.0.patch`
-- PR draft: `docs/upstream-pr-draft.md`
-- Ignored working checkout: `.upstream/cli`
+- Historical patch: `patches/keeperhub-cli-doctor-auth-v0.10.0.patch`
+- Resolution record: `docs/upstream-pr-draft.md`
+- No `patches/keeperhub-cli-doctor-auth.patch` exists because a current duplicate patch is unnecessary.
 
-No raw API response, bearer token, OAuth token, private key, wallet signature, or real API key is stored in these artifacts. No external repository action has been performed.
+No raw API response, bearer token, OAuth token, private key, wallet signature, or real API key is stored in these artifacts. No external repository action has been performed from this repository.

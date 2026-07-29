@@ -16,7 +16,7 @@
 - The final amount is exactly `0.000001 ETH` and the wallet type must be independently verified as EOA. Safe or unknown wallet types remain blocked.
 - Never accept, read, copy, display, log, or store a private key, seed phrase, wallet signature material, OAuth token, HMAC secret, raw `KH_API_KEY`, or raw idempotency key in public evidence.
 - Load `KH_API_KEY` only from the process environment or the ignored mode-`0600` `.env`; there is no `--api-key` argument.
-- Read `/Users/luke/.agents/skills/ego-browser/SKILL.md` completely before the first browser action, then use only ego-browser for website interaction in this plan.
+- Read the installed `ego-browser` skill's `SKILL.md` completely before the first browser action, then use only ego-browser for website interaction in this plan.
 - Treat a browser login or user takeover as a hard stop until the user explicitly asks the agent to continue.
 - Do not broadcast a transaction until the user has approved the exact chain, sender, recipient, amount, condition digest, Gas estimate, intent digest, plan digest, and expiry shown after a fresh simulation.
 - The approval covers only that request and safe retries with the already-persisted idempotency key. A new key or any field change requires a new simulation and new approval.
@@ -206,7 +206,7 @@ Expected: one commit on `hackathon/submission`; the baseline tag remains on `c4d
 
 - [ ] **Step 1: Read the browser skill before any web action**
 
-Read `/Users/luke/.agents/skills/ego-browser/SKILL.md` completely. Create one ego-browser task space for this hackathon goal and reuse it for the public rules, documentation, authenticated DoraHacks pages, and later receipt verification. Do not mix browser automation backends.
+Read the installed `ego-browser` skill's `SKILL.md` completely. Create one ego-browser task space for this hackathon goal and reuse it for the public rules, documentation, authenticated DoraHacks pages, and later receipt verification. Do not mix browser automation backends.
 
 - [ ] **Step 2: Capture the current DoraHacks event rules**
 
@@ -1023,38 +1023,18 @@ test ! -e audit/final-release.jsonl
 
 Expected: all three commands exit zero. If any file exists, stop and inspect it; do not delete, truncate, overwrite, or create a new idempotency key casually.
 
-- [ ] **Step 2: Re-run live prerequisites immediately before simulation**
+- [ ] **Step 2: Preserve frozen onboarding/UI evidence and load the key privately**
 
-Run:
+The three-Agent onboarding, Doctor, dashboard wallet/Safe Sender/limit checks, guarded online integration, and self-simulation evidence are frozen. Do not repeat them unless relevant code or external account state materially changes. Immediately before the exact final simulation, load only the organization key without printing it:
 
 ```bash
-REPO="$(git rev-parse --show-toplevel)"
 printf 'KeeperHub API key: ' >&2
 IFS= read -rs KH_API_KEY
 export KH_API_KEY
 printf '\n' >&2
-cd /private/tmp/keeperhub-onboarding-submission/claude-project
-export CODEX_HOME=/private/tmp/keeperhub-onboarding-submission/codex-home
-export HERMES_HOME=/private/tmp/keeperhub-onboarding-submission/hermes-home
-DOCTOR_JSON="$(node "$REPO/dist/cli.js" doctor --agent all --chain-id 11155111 --json)"
-node --input-type=module -e '
-const report = JSON.parse(process.argv[1]);
-const allowedWarnings = new Set(["keeperhub.wallet_type"]);
-const blocked = report.checks.filter((check) =>
-  check.status === "fail"
-  || check.status === "skip"
-  || (check.status === "warn" && !allowedWarnings.has(check.id))
-);
-if (blocked.length !== 0) {
-  console.error(JSON.stringify(blocked.map((check) => ({ id: check.id, status: check.status }))));
-  process.exit(1);
-}
-console.log("Doctor evidence gate passed with independent dashboard EOA proof required.");
-' "$DOCTOR_JSON"
-cd "$REPO"
 ```
 
-Expected: REST auth, MCP, enabled testnet, sender, balance/Gas, Spend Cap, and strict self-simulation pass. Stop for any Safe/unknown wallet, insufficient Gas, disabled network, API error, or ambiguous response. For insufficient Gas, show only the currently documented official Quickstart faucet path, ask for a separate user confirmation before claiming test ETH, use ego-browser for the faucet UI, and rerun this step afterward; never switch to mainnet or another faucet by assumption.
+The `release prepare` call in Step 4 is the only fresh network preflight required here. It re-reads the enabled Sepolia chain and full active wallet address, then submits the exact recipient/amount with strict boolean `simulate: true`. Stop for a sender mismatch, disabled/non-testnet chain, insufficient Gas, would-revert result, API error, or ambiguous response. The frozen independent UI evidence remains authoritative for Turnkey EOA semantics, no Sepolia Safe Sender, and EVM `No cap set`; Doctor's `spendCap: null` is not reinterpreted. For insufficient Gas, show only the currently documented official Quickstart faucet path, ask for a separate user confirmation before claiming test ETH, use ego-browser for the faucet UI, and rerun only the exact final simulation afterward; never switch to mainnet or another faucet by assumption.
 
 - [ ] **Step 3: Load the already-approved public inputs without embedding them in history**
 

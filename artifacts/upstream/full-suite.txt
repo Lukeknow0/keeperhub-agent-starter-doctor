@@ -1,3 +1,10 @@
+UPSTREAM RESOLUTION (recorded 2026-07-29): Equivalent official fix merged as
+KeeperHub/cli PR #75, https://github.com/KeeperHub/cli/pull/75
+(merge commit 72f68896aea6a792edd149d4ad42f90251eca332). Current read-only main:
+https://github.com/KeeperHub/cli/commit/ef71237aecf9f448f65f808b859423bd99618149.
+No duplicate local patch or external PR was created. The log below is unchanged
+historical local output from v0.10.0; it was not rerun against v0.13.1.
+
 Recorded: 2026-07-14T15:49:13+08:00
 Base: KeeperHub CLI v0.10.0 (56d28630e3ad49fd0681a8afae7b7c6c1cf8b512)
 Patch SHA-256: aa6743d8c765580c4c8f9c97d30afe33c8fddf0a93f3cac4d91fc36000ce6d66
