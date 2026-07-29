@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "project": "KeeperHub Agent Starter + Doctor",
+  "conditionType": "file-sha256",
+  "releaseStatement": "Release 0.000001 Sepolia ETH only after the submission verification and three-Agent onboarding evidence are complete and approved.",
+  "requiredGate": "npm run verify plus guarded live integration plus Doctor with exactly two approved warnings: keeperhub.wallet_type only when walletType:\"unknown\" and executionAllowed:false, paired with official KeeperHub Turnkey EOA documentation, matching wallet UI, and Sepolia Safe Sender disabled; keeperhub.spend_cap only when spendCap:null, paired with UI proof of EVM \"No cap set\"; no other warn, fail, or skip is accepted; plus authenticated read-only onboarding in Claude, Codex, and Hermes",
+  "verificationRecord": "artifacts/submission/verification.md",
+  "verificationSha256": "8b74eacaf2b7d9bf11df1fd30a4148292c77d8c6501d408cad5d10de8bbed70d",
+  "onboardingRecord": "docs/submission/onboarding-evidence.md",
+  "onboardingSha256": "1f789795c6e6bbde39f28c36274bdef58b828b0a193dbc788c6428135ce377f6",
+  "sourceCommit": "afcf7028a7fe365760f7df5d76cf64b3e1f80923",
+  "chainId": 11155111,
+  "amountEth": "0.000001",
+  "approvalMode": "human-confirmed exact digest"
+}

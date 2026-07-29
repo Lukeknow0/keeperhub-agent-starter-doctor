@@ -24,6 +24,7 @@
     "test:watch": "vitest",
     "test:integration": "vitest run tests/integration",
     "test:secrets": "tsx scripts/secret-scan.ts",
+    "condition:create": "tsx scripts/create-release-condition.ts",
     "verify": "npm run typecheck && npm run test && npm run build && npm run test:secrets && npm run pack:check && npm run test:package",
     "pack:check": "npm pack --dry-run",
     "test:package": "tsx scripts/package-smoke.ts"
