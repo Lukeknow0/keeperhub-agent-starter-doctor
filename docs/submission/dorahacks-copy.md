@@ -74,17 +74,18 @@ The frozen verification evidence records its dated offline and authenticated-liv
 
 The existing transaction ending `...6352` is **pre-event onboarding evidence only** and is excluded from the final-transaction field.
 
-## Limitations and eligibility status
+## Limitations and organizer clarifications
 
 The CLI controls are not an OS sandbox; Claude/Codex write-tool restriction was prompt-scoped; redaction and a local hash chain do not replace host security or external notarization. Final execution also requires a distinct approved recipient and exact human confirmation.
 
-Submission eligibility is **not resolved**. Three official-rule ambiguities remain:
+The organizer has resolved the prior rule questions:
 
-1. whether the tagged July 14 pre-event source baseline is eligible;
-2. which displayed deadline is authoritative because UTC+2 body text conflicts with a timezone-less timeline widget;
-3. when the required source repository must become public before `Apply`.
+1. pre-event repository exploration and prototyping are allowed; submission and any upstream PR must occur during the official window;
+2. the body deadline `2026-08-13 12:00 UTC+2` equals the authenticated Asia/Shanghai widget time `2026-08-13 18:00 UTC+8`;
+3. a merged PR is not required for the onboarding bounty—a public, well-documented starter or concrete teardown shared during the event is independently eligible;
+4. Sepolia is accepted without a judging penalty.
 
-Written organizer/platform clarification is required before final execution, repository publication, agreement, submission, or bounty application.
+Sources and project decisions are frozen in [the 2026-07-30 clarification addendum](organizer-clarifications-2026-07-30.md). The chosen sequence is conservative: publish the repository during the event before the main submission and separate bounty `Apply`. Those external actions still require independent immediate confirmation.
 
 ## Judging-criteria map
 
@@ -92,7 +93,7 @@ Written organizer/platform clarification is required before final execution, rep
 | --- | --- |
 | KeeperHub onchain execution | Implemented conditional execution/status/completion-evidence path; independent public receipt verification and **final real execution remain pending separately authorized checkpoints** |
 | KeeperHub feature depth | Hosted MCP, official Hermes plugin, protected REST, strict simulation, direct execution, idempotency, polling, completion-evidence validation, audit; independent public receipt verification remains pending |
-| Reliability and observability | Structured Doctor contract, strict schemas, intent/plan/state digests, same-key recovery, ambiguity stop, audit verification |
+| Reliability and observability | Structured Doctor contract, strict schemas, intent/plan/state digests, same-key recovery, ambiguity stop, verified hash-chain audit, and clearly labeled deterministic retry/Gas/error-state tests |
 | Originality and usefulness | Three-Agent onboarding plus evidence-category separation and a digest-bound human release protocol |
 | Integration quality / developer experience | Five-command clean-clone preview, explicit apply/authentication/Doctor steps, copyable fixes, package smoke test, blocker teardown |
 | Working transactions, not mockups | Pre-event receipt is disclosed only as onboarding evidence; the required final KeeperHub Sepolia receipt remains pending |

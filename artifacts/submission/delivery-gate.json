@@ -8,7 +8,7 @@
     "unitAndPolicyTests": "115/115 across 14 files",
     "focusedRecordingPolicy": "8/8",
     "localMarkdownLinks": "pass",
-    "secretScan": "200 files checked",
+    "secretScan": "201 files checked",
     "diffCheck": "pass"
   },
   "readiness": [
@@ -25,10 +25,16 @@
       "provenance": "docs/submission/recording-runbook.md"
     },
     {
-      "gate": "recipient-and-rule-clarification",
+      "gate": "official-rule-clarification",
+      "status": "PASS",
+      "evidence": "pre-event prototyping, PR timing, deadline conversion, Sepolia, and standalone contribution eligibility resolved",
+      "provenance": "docs/submission/organizer-clarifications-2026-07-30.md"
+    },
+    {
+      "gate": "final-recipient",
       "status": "BLOCKED",
-      "evidence": "recipient not supplied; official-rule ambiguities unresolved",
-      "provenance": "docs/submission/dorahacks-copy.md and docs/submission/form-field-map.md"
+      "evidence": "recipient not supplied",
+      "provenance": "artifacts/submission/release-condition.json intentionally contains no recipient"
     },
     {
       "gate": "final-simulation-execution-receipt-audit",

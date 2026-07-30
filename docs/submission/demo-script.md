@@ -1,6 +1,6 @@
 # Demo script — one continuous raw take
 
-Status: **RECORDING-ONLY — NOT RUN.** The final recipient and eligibility rulings remain blocked. This script uses one continuous raw screen recording saved as `artifacts/private/keeperhub-demo-final.mov`. No final simulation, final plan, final state, or final audit may exist before capture.
+Status: **RECORDING-ONLY — NOT RUN.** Official timing and contribution eligibility are resolved; the final recipient remains blocked. This script uses one continuous raw screen recording saved as `artifacts/private/keeperhub-demo-final.mov`. No final simulation, final plan, final state, or final audit may exist before capture.
 
 The exact final namespace is `.keeperhub/final-release-plan.json`, `.keeperhub/final-release-state.json`, and `audit/final-release.jsonl`. Default release paths are non-final rehearsal only.
 

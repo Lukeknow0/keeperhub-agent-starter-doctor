@@ -6,14 +6,17 @@ import { describe, expect, it } from "vitest";
 
 const root = resolve(import.meta.dirname, "..");
 const scanner = join(root, "scripts", "secret-scan.ts");
-const tsx = join(root, "node_modules", ".bin", process.platform === "win32" ? "tsx.cmd" : "tsx");
+const tsxLoader = import.meta.resolve("tsx");
 
 function scanExample(contents: string): ReturnType<typeof spawnSync> {
   const scratch = mkdtempSync(join(tmpdir(), "keeperhub-secret-scan-test-"));
   try {
     execFileSync("git", ["init", "--quiet"], { cwd: scratch });
     writeFileSync(join(scratch, ".env.example"), contents);
-    return spawnSync(tsx, [scanner], { cwd: scratch, encoding: "utf8" });
+    return spawnSync(process.execPath, ["--import", tsxLoader, scanner], {
+      cwd: scratch,
+      encoding: "utf8"
+    });
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

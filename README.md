@@ -4,6 +4,8 @@ A safety-first TypeScript starter for taking Claude Code, Codex, or Hermes from 
 
 > Provenance disclosure: the private pre-event research and implementation baseline is preserved at tag `pre-event-rehearsal` (commit `c4d7d2a38e5dea9d607913a384cdf168aec78e9c`). Submission work is developed transparently on `hackathon/submission` after the conservative opening boundary. The earlier transaction remains onboarding evidence and is never represented as the final hackathon transaction.
 
+The organizer later clarified that pre-event exploration/prototyping is allowed when the work is submitted and any upstream PR is opened during the event. The [dated organizer-clarification addendum](docs/submission/organizer-clarifications-2026-07-30.md) also resolves the deadline and confirms that Sepolia is accepted without a judging penalty.
+
 ## Hackathon submission
 
 KeeperHub Agent Starter + Doctor turns a fragile, multi-Agent onboarding path into a short, diagnosable route from clean clone to authenticated read-only proof and a human-controlled conditional Sepolia release.
@@ -96,7 +98,7 @@ Any failed, ambiguous, interrupted, exposed, or expired take hard-aborts. There 
 - Final transaction hash and explorer link: **Pending — no final transaction exists.**
 - Public repository: **Pending — requires the separately authorized publication checkpoint.**
 - Demo video: **Pending — raw final video unavailable; formal recording has not run.**
-- DoraHacks submission and bounty application: **Pending — eligibility remains unresolved and each action requires its own checkpoint.**
+- DoraHacks submission and bounty application: **Pending — official timing and contribution eligibility are resolved; publication, submission, and bounty `Apply` each require their own immediate checkpoint.**
 
 The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d8df6352` is **pre-event onboarding evidence only**. It is not a final-transaction value.
 
@@ -105,7 +107,8 @@ The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d
 - [Architecture](docs/submission/architecture.md) and [security model](docs/submission/security.md)
 - [Verification evidence](artifacts/submission/verification.md) — frozen dated onboarding/Doctor/integration record
 - [Current offline delivery gate](artifacts/submission/delivery-gate.md) — typecheck, unit/policy tests, build, package smoke, secret scan, links, and provenance
-- Local verification: `npm run verify`; focused secret check: `node --experimental-strip-types scripts/secret-scan.ts`
+- [Organizer clarifications](docs/submission/organizer-clarifications-2026-07-30.md) — pre-event prototyping, PR timing, deadline, Sepolia, and judging guidance
+- Local verification: `npm run verify`; focused secret check: `npm run test:secrets`
 - [Ranked blockers and bounty copy](docs/submission/bounty-copy.md)
 - [Current Quickstart auth patch](patches/keeperhub-cli-quickstart-auth.patch), [clean-apply evidence](artifacts/upstream/quickstart-patch-validation.txt), [focused tests](artifacts/upstream/quickstart-focused-tests.txt), and [prepared PR draft](docs/upstream-quickstart-pr-draft.md)
 - [Historical Doctor patch evidence](artifacts/upstream/README.md) and [PR #75 resolution](docs/upstream-pr-draft.md)

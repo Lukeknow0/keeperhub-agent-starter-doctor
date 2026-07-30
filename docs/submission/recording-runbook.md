@@ -20,7 +20,7 @@ The defaults `.keeperhub/release-plan.json`, `.keeperhub/release-state.json`, an
 | Single-recording policy | PASS | `artifacts/submission/recording-policy.json`; focused policy test | Repository |
 | Final plan/state/audit absent before recording | WAITING | Must be checked locally immediately before capture; no raw final evidence exists | Recorder |
 | Recipient and exact transfer summary | BLOCKED | Recipient has not been supplied; `artifacts/submission/release-condition.json` supplies no recipient | User |
-| Eligibility/deadline/source-visibility clarification | BLOCKED | Unresolved official-rule ambiguity recorded in the submission copy | Organizer/platform |
+| Eligibility/deadline/source-visibility clarification | PASS | Organizer answers and deadline conversion recorded in `docs/submission/organizer-clarifications-2026-07-30.md` | Organizer/platform |
 | Formal raw screen recording | RECORDING-ONLY | `artifacts/private/keeperhub-demo-final.mov` does not yet exist as reviewed evidence | Recorder + user |
 | Final strict simulation/execution/receipt/audit | RECORDING-ONLY | No final plan, execution ID, transaction hash, receipt, or final audit exists | User + KeeperHub + public chain |
 

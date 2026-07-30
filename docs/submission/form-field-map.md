@@ -32,8 +32,8 @@ This map contains no private contact values. Team identity, email, wallet owners
 | Contact email or messaging handle | Enter directly; do not record here | Private / not supplied | Platform-required contact field, if any | User |
 | Recipient address | Supply and authorize separately; public only after approval | Not supplied | `artifacts/submission/release-condition.json` intentionally contains no recipient | User |
 | Eligibility attestations and agreements | Read live wording and approve at submission time | External/live text pending | Organizer/platform terms | User + platform |
-| Deadline/timezone and pre-event-source eligibility | Written clarification required | External ruling unavailable | Ambiguities documented in DoraHacks and bounty copy | Organizer/platform |
-| Source visibility requirement | Written clarification required | External ruling unavailable | Public-before-`Apply` timing remains unresolved | Organizer/platform |
+| Deadline/timezone and pre-event-source eligibility | Resolved | Organizer allowed pre-event exploration/prototyping and required in-window submission/PR; `2026-08-13 12:00 UTC+2` equals `18:00 UTC+8` | `docs/submission/organizer-clarifications-2026-07-30.md` | Organizer/platform |
+| Source visibility sequence | Resolved by conservative action order | Organizer says a public starter/teardown shared during the event is eligible; publish before main submission and separate `Apply` | `docs/submission/organizer-clarifications-2026-07-30.md`; publication still requires confirmation | Repository + user |
 | Logo upload | Show exact local path and destination immediately before upload | Local asset only | Upload is a consequential external disclosure | User |
 | Main `Submit` | One click only after field-by-field review and immediate approval | Not run | Main confirmation is independent of upload/publication/bounty | User |
 | Bounty `Apply` | One click only after complete bounty review and immediate approval | Not run | Bounty confirmation is independent of main submission | User |

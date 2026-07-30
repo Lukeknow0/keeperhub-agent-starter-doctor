@@ -56,4 +56,4 @@ Never open, capture, or publish the whole `.keeperhub/` directory. The default `
 - “No cap set” is a UI observation, not a recommendation to leave limits unset.
 - A failed, ambiguous, interrupted, privacy-exposing, or expired final take hard-aborts. It never triggers an automatic second simulation; a new attempt requires a wholly new formal recording and readiness decision.
 - The final recipient has not been supplied. No final signing, execution, audit, hash, receipt, or transaction link exists.
-- Pre-event source eligibility, the authoritative deadline, and required source visibility before `Apply` remain unresolved official-rule ambiguities. Until clarified, final execution, publication, submission, and bounty application remain blocked.
+- Organizer clarification resolves pre-event prototyping, deadline conversion, Sepolia acceptance, and standalone starter/teardown eligibility. Publication, final execution, video upload, submission, and bounty application remain blocked only on their operational prerequisites and separate immediate confirmations.

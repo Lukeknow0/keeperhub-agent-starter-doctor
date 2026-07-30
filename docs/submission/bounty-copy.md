@@ -79,7 +79,7 @@ Separately, this project independently reproduced and tested the Doctor authenti
 
 Equivalent official KeeperHub/cli [PR #75](https://github.com/KeeperHub/cli/pull/75) later merged independently at `72f68896aea6a792edd149d4ad42f90251eca332`. It resolves/sends Authorization and shares a protected `/api/projects` credential probe. No duplicate Doctor PR, branch push, or external Doctor-patch submission was created from this repository. We claim no authorship of or influence on PR #75. The preserved v0.10.0 patch is historical evidence, not a current merge proposal. The no-duplicate-PR decision applies only to the historical Doctor fix; it does not apply to the distinct current Quickstart documentation correction.
 
-The standalone starter/teardown contribution is the TypeScript package described here: preview-first setup adapters, structured Doctor output, compatibility checks, strict release state machine, tests, and documentation. Its hackathon eligibility remains unresolved; its utility does not depend on changes to the official CLI.
+The standalone starter/teardown contribution is the TypeScript package described here: preview-first setup adapters, structured Doctor output, compatibility checks, strict release state machine, tests, and documentation. The organizer confirmed that this category is independently eligible without a merged PR when shared publicly during the event. Its utility does not depend on changes to the official CLI.
 
 ## Transaction and application status
 
@@ -92,4 +92,4 @@ The standalone starter/teardown contribution is the TypeScript package described
 
 The receipt ending `...6352` is **pre-event onboarding evidence only**, never final transaction evidence.
 
-Eligibility is not claimed as resolved. Written clarification remains required for (1) pre-event source eligibility, (2) the authoritative deadline/timezone, and (3) when the source repository must be public before `Apply`. Main submission and bounty `Apply` are separate consequential gates and each requires its own immediate confirmation.
+Organizer clarification now resolves pre-event prototyping, deadline conversion, Sepolia acceptance, and standalone starter/teardown eligibility; see [the dated addendum](organizer-clarifications-2026-07-30.md). The repository will be published during the event before the main submission and separate bounty `Apply`. Publication, main submission, and `Apply` remain independent consequential gates and each requires its own immediate confirmation.
