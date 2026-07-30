@@ -39,8 +39,8 @@ Those choices are intentionally **not** a claim that upstream copied or must ado
 The following ran locally on 2026-07-14 against tag `v0.10.0` at `56d28630e3ad49fd0681a8afae7b7c6c1cf8b512`, using Go 1.26.3 on darwin/arm64. They are not results from current v0.13.1:
 
 ```bash
-git apply --check keeperhub-cli-doctor-auth-v0.10.0.patch
-git apply keeperhub-cli-doctor-auth-v0.10.0.patch
+git apply --check patches/keeperhub-cli-doctor-auth-v0.10.0.patch
+git apply patches/keeperhub-cli-doctor-auth-v0.10.0.patch
 go test ./cmd/doctor -count=1
 go test ./... -count=1
 git diff --check

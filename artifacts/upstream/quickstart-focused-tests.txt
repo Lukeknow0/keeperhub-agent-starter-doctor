@@ -1,0 +1,25 @@
+KeeperHub CLI Quickstart focused test evidence
+Date: 2026-07-29
+Repository base: ef71237aecf9f448f65f808b859423bd99618149
+Environment: go1.26.3 darwin/arm64
+
+Command:
+go test ./cmd/auth/... ./internal/auth/... ./internal/config/...
+
+Results:
+ok github.com/keeperhub/cli/cmd/auth
+ok github.com/keeperhub/cli/internal/auth
+ok github.com/keeperhub/cli/internal/config
+
+Documentation generation:
+go generate ./docs/...
+PASS
+
+Whitespace validation:
+git diff --check
+PASS
+
+This is sanitized local evidence from a clean validation checkout after
+applying patches/keeperhub-cli-quickstart-auth.patch. It contains no API key,
+OAuth token, private key, wallet data, or transaction data. No live KeeperHub
+request or final-transaction simulation was made.

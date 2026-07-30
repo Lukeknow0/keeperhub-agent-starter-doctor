@@ -1,0 +1,15 @@
+diff --git a/docs/quickstart.md b/docs/quickstart.md
+index 511c9d0..edd2695 100644
+--- a/docs/quickstart.md
++++ b/docs/quickstart.md
+@@ -20,7 +20,9 @@ go install github.com/keeperhub/cli/cmd/kh@latest
+ kh auth login
+ ```
+ 
+-This opens a browser window to authenticate. Your token is stored in the OS keyring.
++Open the URL printed by the command, sign in if prompted, and confirm the
++one-time code. The device flow creates an organization API key and stores it in
++the `hosts.yml` path printed by the CLI.
+ 
+ To authenticate non-interactively (CI/CD), set `KH_API_KEY` instead.
+ 

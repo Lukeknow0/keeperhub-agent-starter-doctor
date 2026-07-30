@@ -1,4 +1,29 @@
-# KeeperHub CLI Doctor evidence archive
+# KeeperHub CLI onboarding improvement evidence
+
+## Current merge-ready Quickstart patch (2026-07-29)
+
+`patches/keeperhub-cli-quickstart-auth.patch` is a minimal documentation patch
+against KeeperHub CLI v0.13.1 at
+`ef71237aecf9f448f65f808b859423bd99618149`. It replaces two stale first-login
+claims: the CLI prints a device verification URL/code rather than opening a
+browser, and the current flow stores its organization API key in the printed
+`hosts.yml` path rather than the OS keyring.
+
+The patch was applied to a second clean checkout, passed documentation
+generation, focused auth/config tests, and whitespace validation. It has not
+been submitted externally.
+
+| Artifact | Purpose |
+| --- | --- |
+| `quickstart-patch-validation.txt` | Exact base, checksum, clean apply, generation, and scope checks |
+| `quickstart-focused-tests.txt` | Sanitized focused Go test results |
+| `../../docs/upstream-quickstart-pr-draft.md` | Ready-to-review PR title, body, scope, and validation |
+
+Patch SHA-256:
+`2042dc1cad2a6469787fc617554bff541ac1a220329ab0915fd5d941e30a9c7f`.
+
+No branch, fork, issue, or pull request was created. External submission still
+requires the user's separate confirmation.
 
 ## Current upstream resolution (2026-07-29)
 

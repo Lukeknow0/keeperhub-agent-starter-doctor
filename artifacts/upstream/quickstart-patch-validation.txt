@@ -1,0 +1,24 @@
+KeeperHub CLI Quickstart patch validation
+Date: 2026-07-29
+Repository: https://github.com/KeeperHub/cli
+Base commit: ef71237aecf9f448f65f808b859423bd99618149
+Base release: v0.13.1
+Patch: patches/keeperhub-cli-quickstart-auth.patch
+Patch SHA-256: 2042dc1cad2a6469787fc617554bff541ac1a220329ab0915fd5d941e30a9c7f
+
+Clean-checkout validation:
+- exact base commit: PASS
+- git apply --check: PASS
+- git diff --check: PASS
+- go generate ./docs/...: PASS
+- generated files introduced no additional diff: PASS
+- changed path is only docs/quickstart.md: PASS
+
+The patch corrects two stale onboarding claims. Current source prints a
+verification URL/code rather than opening a browser, and the completed device
+flow stores an organization API key in the hosts.yml path printed by the CLI
+rather than storing the new credential in the OS keyring.
+
+No KeeperHub API, MCP, wallet, simulation, signing, or transaction call was
+performed. No external branch, issue, pull request, or repository mutation was
+created.
