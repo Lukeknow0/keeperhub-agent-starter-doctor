@@ -49,8 +49,8 @@ const files = [...new Set([
 
 const findings: Finding[] = [];
 for (const file of files) {
-  if (file === ".env.example") continue;
-  if (forbiddenFiles.some((pattern) => pattern.test(file))) {
+  const isDocumentedEnvExample = file === ".env.example";
+  if (!isDocumentedEnvExample && forbiddenFiles.some((pattern) => pattern.test(file))) {
     findings.push({ file, rule: "forbidden credential filename" });
     continue;
   }

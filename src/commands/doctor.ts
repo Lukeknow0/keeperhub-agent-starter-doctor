@@ -379,8 +379,8 @@ export async function runDoctor(options: DoctorOptions, deps: DoctorDependencies
   try {
     const chains = await client.getChains();
     const target = chains.find((entry) => numericChainId(entry.chainId) === options.chainId) ?? null;
-    context.chain = target;
     const valid = target !== null && target.isEnabled === true && target.isTestnet === true;
+    context.chain = valid ? target : null;
     checks.push(check(
       "keeperhub.chain", valid ? "pass" : "fail", "Wallet network configuration",
       valid ? `${target.name} is enabled as testnet chain ${options.chainId}.` : `Chain ${options.chainId} is missing, disabled, or not a testnet.`,

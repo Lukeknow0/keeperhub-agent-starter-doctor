@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { access, chmod, mkdir, open, readFile, rename, stat } from "node:fs/promises";
+import type { Stats } from "node:fs";
+import { access, chmod, lstat, mkdir, open, readFile, rename, stat, unlink } from "node:fs/promises";
+import type { FileHandle } from "node:fs/promises";
 import { dirname } from "node:path";
 import { z } from "zod";
 import { canonicalJson, sha256 } from "../core/json.js";
@@ -23,6 +25,23 @@ const intentSchema = z.object({
     path: z.string().min(1),
     sha256: digestSchema
   }).strict()
+}).strict();
+const simulationEvidenceSchema = z.object({
+  status: z.literal("simulated"),
+  from: addressSchema,
+  to: addressSchema,
+  value: z.string().regex(/^[0-9]+$/),
+  gasEstimate: z.string().regex(/^[0-9]+$/),
+  wouldRevert: z.literal(false)
+}).strict();
+const releasePlanSchema = z.object({
+  schemaVersion: z.literal(1),
+  createdAt: z.iso.datetime(),
+  expiresAt: z.iso.datetime(),
+  intent: intentSchema,
+  intentDigest: digestSchema,
+  simulation: simulationEvidenceSchema,
+  planDigest: digestSchema
 }).strict();
 const executionStateSchema = z.object({
   schemaVersion: z.literal(1),
@@ -53,6 +72,121 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
+interface FileIdentity {
+  dev: number;
+  ino: number;
+}
+
+function errorCode(error: unknown): string | undefined {
+  return typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
+    ? error.code
+    : undefined;
+}
+
+async function lstatIfExists(path: string): Promise<Stats | null> {
+  try {
+    return await lstat(path);
+  } catch (error) {
+    if (errorCode(error) === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function fileIdentity(stats: Stats): FileIdentity {
+  return { dev: stats.dev, ino: stats.ino };
+}
+
+function sameIdentity(left: FileIdentity, right: FileIdentity): boolean {
+  return left.dev === right.dev && left.ino === right.ino;
+}
+
+function planReservationError(message: string, causes: string[]): UsageError {
+  return new UsageError(message, {
+    step: "Reserve release plan destination",
+    causes
+  });
+}
+
+async function planPathIsRetained(path: string, expected: FileIdentity): Promise<boolean> {
+  const metadata = await lstatIfExists(path);
+  return metadata !== null
+    && metadata.isFile()
+    && metadata.nlink === 1
+    && sameIdentity(fileIdentity(metadata), expected);
+}
+
+async function assertPlanPathRetained(path: string, expected: FileIdentity): Promise<void> {
+  if (!(await planPathIsRetained(path, expected))) {
+    throw planReservationError("Release plan reservation identity or link count changed.", [path]);
+  }
+}
+
+async function assertPlanHandleRetained(handle: FileHandle, expected: FileIdentity): Promise<void> {
+  const metadata = await handle.stat();
+  if (
+    !metadata.isFile()
+    || metadata.nlink !== 1
+    || !sameIdentity(fileIdentity(metadata), expected)
+  ) {
+    throw planReservationError("Retained release plan identity or link count changed.", [
+      "The reserved plan file was replaced, removed, or multiply linked."
+    ]);
+  }
+}
+
+async function readPlanHandle(handle: FileHandle, expected: FileIdentity): Promise<string> {
+  await assertPlanHandleRetained(handle, expected);
+  const metadata = await handle.stat();
+  const buffer = Buffer.alloc(metadata.size);
+  let offset = 0;
+  while (offset < buffer.length) {
+    const { bytesRead } = await handle.read(buffer, offset, buffer.length - offset, offset);
+    if (bytesRead === 0) {
+      throw planReservationError("Retained release plan contents changed.", [
+        "The reserved plan became shorter while it was being checked."
+      ]);
+    }
+    offset += bytesRead;
+  }
+  await assertPlanHandleRetained(handle, expected);
+  if ((await handle.stat()).size !== metadata.size) {
+    throw planReservationError("Retained release plan contents changed.", [
+      "The reserved plan size changed while it was being checked."
+    ]);
+  }
+  return buffer.toString("utf8");
+}
+
+async function assertPlanContents(
+  handle: FileHandle,
+  expectedIdentity: FileIdentity,
+  expectedContents: string
+): Promise<void> {
+  if (await readPlanHandle(handle, expectedIdentity) !== expectedContents) {
+    throw planReservationError("Retained release plan contents changed.", [
+      "Another writer mutated the reserved plan file."
+    ]);
+  }
+}
+
+async function assertClosedPlanRetained(
+  path: string,
+  expectedIdentity: FileIdentity,
+  expectedContents: string
+): Promise<void> {
+  await assertPlanPathRetained(path, expectedIdentity);
+  const verificationHandle = await open(
+    path,
+    constants.O_RDONLY | constants.O_NOFOLLOW
+  );
+  try {
+    await assertPlanContents(verificationHandle, expectedIdentity, expectedContents);
+  } finally {
+    await verificationHandle.close();
+  }
+  await assertPlanPathRetained(path, expectedIdentity);
+}
+
 async function atomicWrite(workspace: string, inputPath: string, value: string, mode: number): Promise<string> {
   let path = await resolveWorkspacePath(workspace, inputPath);
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
@@ -75,6 +209,113 @@ export async function writePlanFile(workspace: string, inputPath: string, plan: 
   return await atomicWrite(workspace, inputPath, `${JSON.stringify(plan, null, 2)}\n`, 0o644);
 }
 
+export interface PlanFileReservation {
+  readonly identity: FileIdentity;
+  write(plan: ReleasePlan): Promise<string>;
+  commit(): Promise<void>;
+  rollback(): Promise<void>;
+}
+
+export async function reservePlanFile(workspace: string, inputPath: string): Promise<PlanFileReservation> {
+  let path = await resolveWorkspacePath(workspace, inputPath);
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  path = await resolveWorkspacePath(workspace, inputPath);
+  let handle: FileHandle;
+  try {
+    handle = await open(path, "wx+", 0o644);
+  } catch (error) {
+    throw new UsageError("Cannot reserve release plan exclusively.", {
+      step: "Reserve release plan destination",
+      causes: [error instanceof Error ? error.message : String(error)]
+    });
+  }
+  let identity: FileIdentity | null = null;
+  try {
+    const metadata = await handle.stat();
+    identity = fileIdentity(metadata);
+    await assertPlanHandleRetained(handle, identity);
+    await assertPlanPathRetained(path, identity);
+    await assertPlanContents(handle, identity, "");
+  } catch (error) {
+    await handle.close().catch(() => undefined);
+    if (identity !== null && await planPathIsRetained(path, identity)) {
+      await unlink(path).catch(() => undefined);
+    }
+    if (error instanceof UsageError) throw error;
+    throw planReservationError("Cannot establish a retained release plan reservation.", [
+      error instanceof Error ? error.message : String(error)
+    ]);
+  }
+  let active = true;
+  let handleClosed = false;
+  let written = false;
+  let expectedContents = "";
+  return {
+    identity: { ...identity! },
+    async write(plan): Promise<string> {
+      if (!active) throw new Error("Release plan reservation is no longer active.");
+      if (written) throw new Error("Release plan reservation has already been written.");
+      await assertPlanHandleRetained(handle, identity!);
+      await assertPlanPathRetained(path, identity!);
+      await assertPlanContents(handle, identity!, "");
+      const serializedPlan = `${JSON.stringify(plan, null, 2)}\n`;
+      await handle.writeFile(serializedPlan, "utf8");
+      expectedContents = serializedPlan;
+      await handle.sync();
+      await assertPlanHandleRetained(handle, identity!);
+      await assertPlanPathRetained(path, identity!);
+      await assertPlanContents(handle, identity!, expectedContents);
+      await handle.chmod(0o644);
+      await handle.sync();
+      await assertPlanHandleRetained(handle, identity!);
+      await assertPlanPathRetained(path, identity!);
+      await assertPlanContents(handle, identity!, expectedContents);
+      written = true;
+      return path;
+    },
+    async commit(): Promise<void> {
+      if (!active) throw new Error("Release plan reservation is no longer active.");
+      if (!written) throw new Error("Release plan reservation cannot commit before it is written.");
+      await assertPlanHandleRetained(handle, identity!);
+      await assertPlanPathRetained(path, identity!);
+      await assertPlanContents(handle, identity!, expectedContents);
+      await handle.close();
+      handleClosed = true;
+      await assertClosedPlanRetained(path, identity!, expectedContents);
+      active = false;
+    },
+    async rollback(): Promise<void> {
+      if (!active) return;
+      active = false;
+      let retentionError: unknown;
+      if (!handleClosed) {
+        try {
+          await assertPlanHandleRetained(handle, identity!);
+          await assertPlanPathRetained(path, identity!);
+          await assertPlanContents(handle, identity!, expectedContents);
+          await unlink(path);
+        } catch (error) {
+          retentionError = error;
+        }
+        try {
+          await handle.close();
+          handleClosed = true;
+        } catch (error) {
+          retentionError ??= error;
+        }
+      } else {
+        try {
+          await assertClosedPlanRetained(path, identity!, expectedContents);
+          await unlink(path);
+        } catch (error) {
+          retentionError = error;
+        }
+      }
+      if (retentionError !== undefined) throw retentionError;
+    }
+  };
+}
+
 export async function readPlanFile(workspace: string, inputPath: string): Promise<ReleasePlan> {
   const path = await resolveWorkspacePath(workspace, inputPath);
   let value: unknown;
@@ -86,7 +327,14 @@ export async function readPlanFile(workspace: string, inputPath: string): Promis
       causes: [error instanceof Error ? error.message : String(error)]
     });
   }
-  return value as ReleasePlan;
+  const result = releasePlanSchema.safeParse(value);
+  if (!result.success) {
+    throw new UsageError("Release plan has an invalid schema.", {
+      step: "Validate release plan",
+      causes: result.error.issues.map((issue) => `${issue.path.join(".") || "plan"}: ${issue.message}`)
+    });
+  }
+  return result.data as ReleasePlan;
 }
 
 export function signState(unsigned: ReleaseExecutionStateUnsigned): ReleaseExecutionState {

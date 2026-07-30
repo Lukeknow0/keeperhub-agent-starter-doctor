@@ -1,17 +1,20 @@
-import { mkdir, readFile, readdir, stat, symlink, writeFile } from "node:fs/promises";
+import { link, mkdir, readFile, readdir, rename, stat, symlink, unlink, writeFile } from "node:fs/promises";
+import { renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdtemp } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { createReleaseCommand } from "../src/commands/release.js";
+import { createReleaseClientAdapter, createReleaseCommand } from "../src/commands/release.js";
 import { UsageError } from "../src/core/errors.js";
 import { canonicalJson, sha256 } from "../src/core/json.js";
 import { confirmationPhrase, retryConfirmationPhrase } from "../src/release/confirm.js";
-import { appendAuditEvent } from "../src/release/audit.js";
+import { appendAuditEvent, reserveAuditDestination, verifyAuditFile } from "../src/release/audit.js";
 import { readPlanFile, readStateFile, signState, writePlanFile, writeStateFile } from "../src/release/files.js";
 import { executeRelease, prepareRelease, retryRelease } from "../src/release/service.js";
 import { resolveWorkspacePath } from "../src/release/validation.js";
+import type { KeeperHubClient } from "../src/keeperhub/client.js";
+import { simulationSchema } from "../src/keeperhub/schemas.js";
 import type {
   ExecutionStatusResult,
   ReleaseKeeperHubClient,
@@ -29,6 +32,14 @@ function digest(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function deferred(): { promise: Promise<void>; resolve(): void } {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 function fakeClient(overrides: Partial<ReleaseKeeperHubClient> = {}): ReleaseKeeperHubClient {
   return {
     async getChain(chainId) {
@@ -40,6 +51,7 @@ function fakeClient(overrides: Partial<ReleaseKeeperHubClient> = {}): ReleaseKee
     async simulateTransfer(request: TransferSimulationRequest) {
       return {
         success: true,
+        status: "simulated",
         from: WALLET,
         to: request.recipientAddress,
         value: "1000000000000",
@@ -140,6 +152,7 @@ describe("conditional release", () => {
     const getWallet = vi.fn(async () => ({ walletAddress: WALLET }));
     const simulateTransfer = vi.fn(async (request: TransferSimulationRequest) => ({
       success: true,
+      status: "simulated" as const,
       from: WALLET,
       to: request.recipientAddress,
       value: "1000000000000",
@@ -196,6 +209,885 @@ describe("conditional release", () => {
     }, paths.runtime)).rejects.toBeInstanceOf(UsageError);
   });
 
+  it("does not consume the simulation when the plan or audit destination cannot be persisted", async () => {
+    const existingWorkspace = await mkdtemp(join(tmpdir(), "keeperhub-release-destination-"));
+    await mkdir(join(existingWorkspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(existingWorkspace, "deliverables/result.txt"), contents);
+    await mkdir(join(existingWorkspace, ".keeperhub"));
+    await writeFile(join(existingWorkspace, ".keeperhub/plan.json"), "do not replace\n");
+    const existingSimulation = vi.fn(fakeClient().simulateTransfer);
+    const existingRuntime: ReleaseRuntime = {
+      client: fakeClient({ simulateTransfer: existingSimulation }),
+      workspace: existingWorkspace,
+      now: () => AFTER_OPEN
+    };
+    await expect(prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, existingRuntime)).rejects.toThrow(/plan.*exists|exclusively|replace/i);
+    expect(existingSimulation).not.toHaveBeenCalled();
+    expect(await readFile(join(existingWorkspace, ".keeperhub/plan.json"), "utf8")).toBe("do not replace\n");
+
+    const invalidWorkspace = await mkdtemp(join(tmpdir(), "keeperhub-release-destination-"));
+    await mkdir(join(invalidWorkspace, "deliverables"));
+    await writeFile(join(invalidWorkspace, "deliverables/result.txt"), contents);
+    await mkdir(join(invalidWorkspace, "audit/release.jsonl"), { recursive: true });
+    const invalidSimulation = vi.fn(fakeClient().simulateTransfer);
+    const invalidRuntime: ReleaseRuntime = {
+      client: fakeClient({ simulateTransfer: invalidSimulation }),
+      workspace: invalidWorkspace,
+      now: () => AFTER_OPEN
+    };
+    await expect(prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, invalidRuntime)).rejects.toThrow();
+    expect(invalidSimulation).not.toHaveBeenCalled();
+    await expect(readFile(join(invalidWorkspace, ".keeperhub/plan.json"))).rejects.toThrow();
+    await expect(readFile(join(invalidWorkspace, "audit/release.jsonl.lock"))).rejects.toThrow();
+  });
+
+  it("rejects completed or non-null artifact-bearing simulation responses and removes empty reservations", async () => {
+    for (const simulation of [
+      {
+        success: true,
+        status: "completed",
+        from: WALLET,
+        to: RECIPIENT,
+        value: "1000000000000",
+        gasEstimate: "21000",
+        wouldRevert: false,
+        executionId: "exec-forbidden",
+        transactionHash: `0x${"8".repeat(64)}`,
+        explorerUrl: `https://sepolia.etherscan.io/tx/0x${"8".repeat(64)}`
+      },
+      {
+        success: true,
+        status: "simulated",
+        from: WALLET,
+        to: RECIPIENT,
+        value: "1000000000000",
+        gasEstimate: "21000",
+        wouldRevert: false,
+        transactionHash: `0x${"9".repeat(64)}`
+      },
+      {
+        success: true,
+        status: "simulated",
+        from: WALLET,
+        to: RECIPIENT,
+        value: "1000000000000",
+        gasEstimate: "21000",
+        wouldRevert: false,
+        executionId: "exec-forbidden"
+      },
+      {
+        success: true,
+        status: "simulated",
+        from: WALLET,
+        to: RECIPIENT,
+        value: "1000000000000",
+        gasEstimate: "21000",
+        wouldRevert: false,
+        explorerUrl: `https://sepolia.etherscan.io/tx/0x${"7".repeat(64)}`
+      }
+    ]) {
+      const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-simulation-"));
+      await mkdir(join(workspace, "deliverables"));
+      const contents = "approved\n";
+      await writeFile(join(workspace, "deliverables/result.txt"), contents);
+      const simulateTransfer = vi.fn(async () => simulation);
+      await expect(prepareRelease({
+        conditionFile: "deliverables/result.txt",
+        expectedSha256: digest(contents),
+        recipientAddress: RECIPIENT,
+        amount: "0.000001",
+        chainId: 11_155_111,
+        walletType: "eoa",
+        planPath: ".keeperhub/plan.json",
+        auditPath: "audit/release.jsonl"
+      }, {
+        client: fakeClient({ simulateTransfer }),
+        workspace,
+        now: () => AFTER_OPEN
+      })).rejects.toThrow(/simulation/i);
+      expect(simulateTransfer).toHaveBeenCalledTimes(1);
+      await expect(readFile(join(workspace, ".keeperhub/plan.json"))).rejects.toThrow();
+      await expect(readFile(join(workspace, "audit/release.jsonl"))).rejects.toThrow();
+      await expect(readFile(join(workspace, "audit/release.jsonl.lock"))).rejects.toThrow();
+    }
+  });
+
+  it("accepts explicitly null simulation artifact fields as absence and preserves exact evidence", async () => {
+    const simulateTransfer = vi.fn(async (request: TransferSimulationRequest) => ({
+      success: true,
+      status: "simulated" as const,
+      from: WALLET,
+      to: request.recipientAddress,
+      value: "1000000000000",
+      gasEstimate: "21000",
+      wouldRevert: false as const,
+      executionId: null,
+      transactionHash: null,
+      explorerUrl: null
+    }));
+    const paths = await prepared(fakeClient({ simulateTransfer }));
+
+    const plan = await readPlanFile(paths.workspace, paths.planPath);
+    expect(plan.simulation).toEqual({
+      status: "simulated",
+      from: WALLET,
+      to: RECIPIENT,
+      value: "1000000000000",
+      gasEstimate: "21000",
+      wouldRevert: false
+    });
+    expect(simulateTransfer).toHaveBeenCalledTimes(1);
+    expect(await readFile(join(paths.workspace, paths.auditPath), "utf8")).toContain("\"status\":\"simulated\"");
+  });
+
+  it("holds the audit reservation across simulation so concurrent audit writers fail safely", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-lock-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const enteredSimulation = deferred();
+    const finishSimulation = deferred();
+    const client = fakeClient({
+      async simulateTransfer(request) {
+        enteredSimulation.resolve();
+        await finishSimulation.promise;
+        return await fakeClient().simulateTransfer(request);
+      }
+    });
+    const preparation = prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, { client, workspace, now: () => AFTER_OPEN });
+
+    await enteredSimulation.promise;
+    const concurrentOutcome = await appendAuditEvent(
+      workspace,
+      "audit/release.jsonl",
+      "concurrent",
+      { accepted: false },
+      AFTER_OPEN
+    ).then(
+      () => "appended" as const,
+      (error: unknown) => error
+    );
+    finishSimulation.resolve();
+    await preparation;
+
+    expect(concurrentOutcome).toBeInstanceOf(UsageError);
+    expect(String((concurrentOutcome as Error).message)).toMatch(/audit.*lock|reserve.*audit|exclusiv/i);
+    const records = (await readFile(join(workspace, "audit/release.jsonl"), "utf8"))
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as { event: string });
+    expect(records.map(({ event }) => event)).toEqual(["condition", "simulation"]);
+  });
+
+  it("rejects a valid same-file audit mutation while simulation is in flight", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-mutation-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const enteredSimulation = deferred();
+    const finishSimulation = deferred();
+    const client = fakeClient({
+      async simulateTransfer(request) {
+        enteredSimulation.resolve();
+        await finishSimulation.promise;
+        return await fakeClient().simulateTransfer(request);
+      }
+    });
+    const preparation = prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, { client, workspace, now: () => AFTER_OPEN });
+
+    await enteredSimulation.promise;
+    const unsigned = {
+      schemaVersion: 1 as const,
+      index: 0,
+      timestamp: AFTER_OPEN.toISOString(),
+      event: "uncooperative-mutation",
+      data: { valid: true },
+      previousHash: null
+    };
+    await writeFile(join(workspace, "audit/release.jsonl"), `${JSON.stringify({
+      ...unsigned,
+      hash: sha256(canonicalJson(unsigned))
+    })}\n`);
+    finishSimulation.resolve();
+
+    await expect(preparation).rejects.toThrow(/audit.*(?:changed|mutat)|retained.*audit/i);
+    await expect(readFile(join(workspace, ".keeperhub/plan.json"))).rejects.toThrow();
+  });
+
+  it("rejects audit path replacement while simulation is in flight", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-replacement-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const enteredSimulation = deferred();
+    const finishSimulation = deferred();
+    const client = fakeClient({
+      async simulateTransfer(request) {
+        enteredSimulation.resolve();
+        await finishSimulation.promise;
+        return await fakeClient().simulateTransfer(request);
+      }
+    });
+    const preparation = prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, { client, workspace, now: () => AFTER_OPEN });
+
+    await enteredSimulation.promise;
+    const auditPath = join(workspace, "audit/release.jsonl");
+    const displacedPath = join(workspace, "audit/displaced.jsonl");
+    await rename(auditPath, displacedPath);
+    await writeFile(auditPath, "");
+    finishSimulation.resolve();
+
+    await expect(preparation).rejects.toThrow(/audit.*(?:identity|replac|changed)|retained.*audit/i);
+    await expect(readFile(join(workspace, ".keeperhub/plan.json"))).rejects.toThrow();
+    expect(await readFile(auditPath, "utf8")).toBe("");
+    expect(await readFile(displacedPath, "utf8")).toBe("");
+    await expect(readFile(`${auditPath}.lock`)).rejects.toThrow();
+  });
+
+  it("detects audit replacement between the final retained precheck and write", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-final-replacement-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const auditPath = join(workspace, "audit/release.jsonl");
+    const displacedPath = join(workspace, "audit/displaced.jsonl");
+    const controlledNow = new Date(AFTER_OPEN);
+    let timestampReads = 0;
+    controlledNow.toISOString = () => {
+      timestampReads += 1;
+      if (timestampReads === 3) {
+        renameSync(auditPath, displacedPath);
+        writeFileSync(auditPath, "replacement audit\n");
+      }
+      return AFTER_OPEN.toISOString();
+    };
+
+    await expect(prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, {
+      client: fakeClient(),
+      workspace,
+      now: () => controlledNow
+    })).rejects.toThrow(/audit.*(?:identity|replac|changed)|retained.*audit/i);
+
+    expect(timestampReads).toBe(3);
+    expect(await readFile(auditPath, "utf8")).toBe("replacement audit\n");
+    await expect(verifyAuditFile(workspace, "audit/displaced.jsonl")).resolves.toMatchObject({
+      ok: true,
+      records: 2
+    });
+    await expect(readFile(join(workspace, ".keeperhub/plan.json"))).rejects.toThrow();
+    await expect(readFile(`${auditPath}.lock`)).rejects.toThrow();
+  });
+
+  it("preserves a replacement lock and audit file when lock ownership is lost", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-lock-replacement-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const enteredSimulation = deferred();
+    const finishSimulation = deferred();
+    const client = fakeClient({
+      async simulateTransfer(request) {
+        enteredSimulation.resolve();
+        await finishSimulation.promise;
+        return await fakeClient().simulateTransfer(request);
+      }
+    });
+    const preparation = prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, { client, workspace, now: () => AFTER_OPEN });
+
+    await enteredSimulation.promise;
+    const auditPath = join(workspace, "audit/release.jsonl");
+    const lockPath = `${auditPath}.lock`;
+    const replacementLock = "replacement lock\n";
+    await unlink(lockPath);
+    await writeFile(lockPath, replacementLock);
+    finishSimulation.resolve();
+
+    await expect(preparation).rejects.toThrow(/audit lock.*identity|lock.*changed/i);
+    expect(await readFile(lockPath, "utf8")).toBe(replacementLock);
+    expect(await readFile(auditPath, "utf8")).toBe("");
+    await expect(readFile(join(workspace, ".keeperhub/plan.json"))).rejects.toThrow();
+  });
+
+  it("rejects a multiply-linked audit reservation before writing", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-link-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const enteredSimulation = deferred();
+    const finishSimulation = deferred();
+    const client = fakeClient({
+      async simulateTransfer(request) {
+        enteredSimulation.resolve();
+        await finishSimulation.promise;
+        return await fakeClient().simulateTransfer(request);
+      }
+    });
+    const preparation = prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, { client, workspace, now: () => AFTER_OPEN });
+
+    await enteredSimulation.promise;
+    const auditPath = join(workspace, "audit/release.jsonl");
+    const aliasPath = join(workspace, "audit/release-alias.jsonl");
+    await link(auditPath, aliasPath);
+    finishSimulation.resolve();
+
+    await expect(preparation).rejects.toThrow(/audit.*(?:link|identity|changed)|retained.*audit/i);
+    expect(await readFile(auditPath, "utf8")).toBe("");
+    expect(await readFile(aliasPath, "utf8")).toBe("");
+    await expect(readFile(`${auditPath}.lock`)).rejects.toThrow();
+    await expect(readFile(join(workspace, ".keeperhub/plan.json"))).rejects.toThrow();
+  });
+
+  it("rejects plan path replacement before writing and preserves both files", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-plan-replacement-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const enteredSimulation = deferred();
+    const finishSimulation = deferred();
+    const client = fakeClient({
+      async simulateTransfer(request) {
+        enteredSimulation.resolve();
+        await finishSimulation.promise;
+        return await fakeClient().simulateTransfer(request);
+      }
+    });
+    const preparation = prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, { client, workspace, now: () => AFTER_OPEN });
+
+    await enteredSimulation.promise;
+    const planPath = join(workspace, ".keeperhub/plan.json");
+    const displacedPath = join(workspace, ".keeperhub/displaced-plan.json");
+    await rename(planPath, displacedPath);
+    await writeFile(planPath, "replacement plan\n");
+    finishSimulation.resolve();
+
+    await expect(preparation).rejects.toThrow(/plan.*(?:identity|replac|changed)|retained.*plan/i);
+    expect(await readFile(planPath, "utf8")).toBe("replacement plan\n");
+    expect(await readFile(displacedPath, "utf8")).toBe("");
+    await expect(verifyAuditFile(workspace, "audit/release.jsonl")).resolves.toMatchObject({
+      ok: true,
+      records: 2
+    });
+    await expect(readFile(join(workspace, "audit/release.jsonl.lock"))).rejects.toThrow();
+  });
+
+  it("never removes a replacement while rolling back an unused plan reservation", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-plan-rollback-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const enteredSimulation = deferred();
+    const finishSimulation = deferred();
+    const client = fakeClient({
+      async simulateTransfer(request) {
+        enteredSimulation.resolve();
+        await finishSimulation.promise;
+        return {
+          ...await fakeClient().simulateTransfer(request),
+          status: "completed",
+          executionId: "unexpected"
+        };
+      }
+    });
+    const preparation = prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, { client, workspace, now: () => AFTER_OPEN });
+
+    await enteredSimulation.promise;
+    const planPath = join(workspace, ".keeperhub/plan.json");
+    const displacedPath = join(workspace, ".keeperhub/displaced-plan.json");
+    await rename(planPath, displacedPath);
+    await writeFile(planPath, "replacement plan\n");
+    finishSimulation.resolve();
+
+    await expect(preparation).rejects.toThrow();
+    expect(await readFile(planPath, "utf8")).toBe("replacement plan\n");
+    expect(await readFile(displacedPath, "utf8")).toBe("");
+    await expect(readFile(join(workspace, "audit/release.jsonl.lock"))).rejects.toThrow();
+  });
+
+  it("rejects a multiply-linked plan reservation before writing", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-plan-link-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const enteredSimulation = deferred();
+    const finishSimulation = deferred();
+    const client = fakeClient({
+      async simulateTransfer(request) {
+        enteredSimulation.resolve();
+        await finishSimulation.promise;
+        return await fakeClient().simulateTransfer(request);
+      }
+    });
+    const preparation = prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, { client, workspace, now: () => AFTER_OPEN });
+
+    await enteredSimulation.promise;
+    const planPath = join(workspace, ".keeperhub/plan.json");
+    const aliasPath = join(workspace, ".keeperhub/plan-alias.json");
+    await link(planPath, aliasPath);
+    finishSimulation.resolve();
+
+    await expect(preparation).rejects.toThrow(/plan.*(?:link|identity|changed)|retained.*plan/i);
+    expect(await readFile(planPath, "utf8")).toBe("");
+    expect(await readFile(aliasPath, "utf8")).toBe("");
+    await expect(readFile(join(workspace, "audit/release.jsonl.lock"))).rejects.toThrow();
+  });
+
+  it("fails closed on an ambiguous pre-existing audit lock before simulation", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-static-lock-"));
+    await mkdir(join(workspace, "deliverables"));
+    await mkdir(join(workspace, "audit"));
+    const contents = "approved\n";
+    const lockContents = "possibly active or stale\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    await writeFile(join(workspace, "audit/release.jsonl.lock"), lockContents);
+    const simulateTransfer = vi.fn(fakeClient().simulateTransfer);
+
+    await expect(prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, {
+      client: fakeClient({ simulateTransfer }),
+      workspace,
+      now: () => AFTER_OPEN
+    })).rejects.toThrow(/audit.*lock|reserve.*audit|exclusiv/i);
+
+    expect(simulateTransfer).not.toHaveBeenCalled();
+    expect(await readFile(join(workspace, "audit/release.jsonl.lock"), "utf8")).toBe(lockContents);
+    await expect(readFile(join(workspace, ".keeperhub/plan.json"))).rejects.toThrow();
+    await expect(readFile(join(workspace, "audit/release.jsonl"))).rejects.toThrow();
+  });
+
+  it("retains and extends a pre-existing static audit destination", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-static-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    await appendAuditEvent(
+      workspace,
+      "audit/release.jsonl",
+      "pre-existing",
+      { retained: true },
+      new Date(AFTER_OPEN.getTime() - 1_000)
+    );
+    const auditPath = join(workspace, "audit/release.jsonl");
+    const before = await stat(auditPath);
+
+    await prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/plan.json",
+      auditPath: "audit/release.jsonl"
+    }, {
+      client: fakeClient(),
+      workspace,
+      now: () => AFTER_OPEN
+    });
+
+    const after = await stat(auditPath);
+    expect({ dev: after.dev, ino: after.ino }).toEqual({ dev: before.dev, ino: before.ino });
+    await expect(verifyAuditFile(workspace, "audit/release.jsonl")).resolves.toMatchObject({
+      ok: true,
+      records: 3
+    });
+    const events = (await readFile(auditPath, "utf8"))
+      .trim()
+      .split("\n")
+      .map((line) => (JSON.parse(line) as { event: string }).event);
+    expect(events).toEqual(["pre-existing", "condition", "simulation"]);
+    await expect(readFile(`${auditPath}.lock`)).rejects.toThrow();
+  });
+
+  it("serializes concurrent appends made through one audit reservation", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-audit-serialized-"));
+    const reservation = await reserveAuditDestination(workspace, "audit/release.jsonl");
+    try {
+      await Promise.all([
+        reservation.append("one", { order: 1 }, AFTER_OPEN),
+        reservation.append("two", { order: 2 }, AFTER_OPEN)
+      ]);
+    } finally {
+      await reservation.release();
+    }
+
+    await expect(verifyAuditFile(workspace, "audit/release.jsonl")).resolves.toMatchObject({
+      ok: true,
+      records: 2
+    });
+    const records = (await readFile(join(workspace, "audit/release.jsonl"), "utf8"))
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as { index: number; event: string });
+    expect(records).toMatchObject([
+      { index: 0, event: "one" },
+      { index: 1, event: "two" }
+    ]);
+  });
+
+  it("rejects one path used for both plan and audit before simulation", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-overlap-"));
+    await mkdir(join(workspace, "deliverables"));
+    const contents = "approved\n";
+    await writeFile(join(workspace, "deliverables/result.txt"), contents);
+    const simulateTransfer = vi.fn(fakeClient().simulateTransfer);
+    await expect(prepareRelease({
+      conditionFile: "deliverables/result.txt",
+      expectedSha256: digest(contents),
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      chainId: 11_155_111,
+      walletType: "eoa",
+      planPath: ".keeperhub/final-release.json",
+      auditPath: ".keeperhub/final-release.json"
+    }, {
+      client: fakeClient({ simulateTransfer }),
+      workspace,
+      now: () => AFTER_OPEN
+    })).rejects.toThrow(/distinct|same path/i);
+    expect(simulateTransfer).not.toHaveBeenCalled();
+    await expect(readFile(join(workspace, ".keeperhub/final-release.json"))).rejects.toThrow();
+  });
+
+  it("strictly validates loaded plan schema, exact TTL, and simulation semantics", async () => {
+    const paths = await prepared();
+    const planPath = join(paths.workspace, paths.planPath);
+    const original = JSON.parse(await readFile(planPath, "utf8")) as Record<string, unknown>;
+
+    await writeFile(planPath, JSON.stringify({ ...original, unexpected: true }));
+    await expect(readPlanFile(paths.workspace, paths.planPath)).rejects.toThrow(/schema/i);
+
+    const shortTtl: Record<string, unknown> = {
+      ...original,
+      expiresAt: new Date(Date.parse(String(original.createdAt)) + 5 * 60_000).toISOString()
+    };
+    const { planDigest: _shortDigest, ...shortUnsigned } = shortTtl;
+    shortTtl.planDigest = sha256(canonicalJson(shortUnsigned));
+    await writeFile(planPath, JSON.stringify(shortTtl));
+    await expect(executeRelease(executeInput(paths), paths.runtime)).rejects.toThrow(/ten minutes|ten-minute|ttl/i);
+
+    const mismatchedSimulation: Record<string, unknown> = {
+      ...original,
+      simulation: {
+        ...(original.simulation as Record<string, unknown>),
+        from: "0x3333333333333333333333333333333333333333"
+      }
+    };
+    const { planDigest: _simulationDigest, ...simulationUnsigned } = mismatchedSimulation;
+    mismatchedSimulation.planDigest = sha256(canonicalJson(simulationUnsigned));
+    await writeFile(planPath, JSON.stringify(mismatchedSimulation));
+    await expect(executeRelease(executeInput(paths), paths.runtime)).rejects.toThrow(/simulation.*intent|sender/i);
+  });
+
+  it("requires the plan digest and prints the complete centralized formal summary", async () => {
+    const wrongPaths = await prepared();
+    const wrongPlan = await readPlanFile(wrongPaths.workspace, wrongPaths.planPath);
+    wrongPaths.runtime.confirmIO = {
+      isInputTTY: true,
+      isOutputTTY: true,
+      question: async (prompt) => {
+        expect(prompt).toContain("Ethereum Sepolia");
+        expect(prompt).toContain(String(wrongPlan.intent.chainId));
+        expect(prompt).toContain("Wallet type: eoa");
+        expect(prompt).toContain(wrongPlan.intent.walletAddress);
+        expect(prompt).toContain(wrongPlan.intent.recipientAddress);
+        expect(prompt).toContain(`${wrongPlan.intent.amount} ETH`);
+        expect(prompt).toContain("1000000000000 wei");
+        expect(prompt).toContain(wrongPlan.intent.condition.path);
+        expect(prompt).toContain(wrongPlan.intent.condition.sha256);
+        expect(prompt).toContain("Simulation status: simulated");
+        expect(prompt).toContain(`Simulation value: ${wrongPlan.simulation.value} wei`);
+        expect(prompt).toContain(`Simulation Gas estimate: ${wrongPlan.simulation.gasEstimate}`);
+        expect(prompt).toContain("Simulation would revert: false");
+        expect(prompt).toContain(wrongPlan.intentDigest);
+        expect(prompt).toContain(wrongPlan.planDigest);
+        expect(prompt).toContain(wrongPlan.expiresAt);
+        expect(prompt).toMatch(/zero on-chain side effects/i);
+        expect(prompt).toMatch(/same (persisted )?idempotency key/i);
+        expect(prompt).toContain(confirmationPhrase(wrongPlan.planDigest));
+        return confirmationPhrase(wrongPlan.intentDigest);
+      }
+    };
+    await expect(executeRelease(executeInput(wrongPaths), wrongPaths.runtime)).resolves.toMatchObject({
+      outcome: "cancelled"
+    });
+  });
+
+  it("rechecks enabled testnet Sepolia immediately before execute and cross-process retry POSTs", async () => {
+    for (const retry of [false, true]) {
+      let chainReads = 0;
+      const submit = vi.fn(async () => ({ executionId: "never", status: "queued" }));
+      const client = fakeClient({
+        async getChain(chainId) {
+          chainReads += 1;
+          return {
+            chainId,
+            enabled: chainReads === 1,
+            isTestnet: true,
+            name: "Ethereum Sepolia"
+          };
+        },
+        executeTransfer: submit
+      });
+      const paths = await prepared(client);
+      const plan = await readPlanFile(paths.workspace, paths.planPath);
+      paths.runtime.confirmIO = {
+        isInputTTY: true,
+        isOutputTTY: true,
+        question: async () => retry
+          ? retryConfirmationPhrase(plan.planDigest)
+          : confirmationPhrase(plan.planDigest)
+      };
+      if (retry) {
+        await writeRetryState(paths);
+        await expect(retryRelease({
+          planPath: paths.planPath,
+          statePath: paths.statePath,
+          auditPath: paths.auditPath
+        }, paths.runtime)).rejects.toThrow(/Sepolia|network|disabled/i);
+      } else {
+        await expect(executeRelease(executeInput(paths), paths.runtime)).rejects.toThrow(/Sepolia|network|disabled/i);
+      }
+      expect(submit).not.toHaveBeenCalled();
+      expect(chainReads).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("caps polling sleeps and treats zero or invalid hints as absent", async () => {
+    expect(simulationSchema.safeParse({
+      success: true,
+      status: "completed",
+      wouldRevert: false
+    }).success).toBe(false);
+
+    const responses = new Map<string, string>([
+      ["invalid", "not-a-number"],
+      ["huge", "999999"],
+      ["zero", "0"]
+    ]);
+    const adapter = createReleaseClientAdapter({
+      async getExecutionStatus(executionId: string) {
+        return {
+          data: { executionId, status: "pending" },
+          headers: new Headers({ "X-Poll-Interval-Hint": responses.get(executionId) ?? "" })
+        };
+      }
+    } as unknown as KeeperHubClient);
+    await expect(adapter.getExecutionStatus("invalid")).resolves.not.toHaveProperty("pollIntervalHintMs");
+    await expect(adapter.getExecutionStatus("huge")).resolves.toMatchObject({ pollIntervalHintMs: 30_000 });
+    await expect(adapter.getExecutionStatus("zero")).resolves.not.toHaveProperty("pollIntervalHintMs");
+
+    let statusCalls = 0;
+    const sleep = vi.fn(async (_milliseconds: number) => undefined);
+    const paths = await prepared(fakeClient({
+      async getExecutionStatus(executionId) {
+        statusCalls += 1;
+        return statusCalls === 1
+          ? { executionId, status: "pending", pollIntervalHintMs: 999_999 }
+          : {
+            executionId,
+            status: "completed",
+            transactionHash: `0x${"a".repeat(64)}`,
+            explorerUrl: `https://sepolia.etherscan.io/tx/0x${"a".repeat(64)}`,
+            result: { success: true }
+          };
+      }
+    }));
+    const plan = await readPlanFile(paths.workspace, paths.planPath);
+    paths.runtime.sleep = sleep;
+    paths.runtime.confirmIO = {
+      isInputTTY: true,
+      isOutputTTY: true,
+      question: async () => confirmationPhrase(plan.planDigest)
+    };
+    await executeRelease(executeInput(paths), paths.runtime);
+    expect(sleep).toHaveBeenCalledWith(30_000);
+  });
+
+  it("preserves simulation status and execution artifacts through the production adapter", async () => {
+    const transactionHash = `0x${"b".repeat(64)}`;
+    const explorerUrl = `https://sepolia.etherscan.io/tx/${transactionHash}`;
+    const adapter = createReleaseClientAdapter({
+      async simulateTransfer() {
+        return {
+          success: true,
+          status: "simulated",
+          from: WALLET,
+          to: RECIPIENT,
+          value: "1000000000000",
+          gasEstimate: "21000",
+          wouldRevert: false,
+          executionId: "unexpected-execution",
+          transactionHash,
+          transactionLink: explorerUrl
+        };
+      }
+    } as unknown as KeeperHubClient);
+
+    await expect(adapter.simulateTransfer({
+      chainId: 11_155_111,
+      recipientAddress: RECIPIENT,
+      amount: "0.000001",
+      simulate: true
+    })).resolves.toMatchObject({
+      status: "simulated",
+      executionId: "unexpected-execution",
+      transactionHash,
+      explorerUrl
+    });
+  });
+
+  it("keeps either non-null explorer alias visible to simulation validation", async () => {
+    const explorerUrl = `https://sepolia.etherscan.io/tx/0x${"c".repeat(64)}`;
+    for (const aliases of [
+      { transactionLink: explorerUrl, explorerUrl: null },
+      { transactionLink: null, explorerUrl }
+    ]) {
+      const adapter = createReleaseClientAdapter({
+        async simulateTransfer() {
+          return {
+            success: true,
+            status: "simulated",
+            from: WALLET,
+            to: RECIPIENT,
+            value: "1000000000000",
+            gasEstimate: "21000",
+            wouldRevert: false,
+            executionId: null,
+            transactionHash: null,
+            ...aliases
+          };
+        }
+      } as unknown as KeeperHubClient);
+      const workspace = await mkdtemp(join(tmpdir(), "keeperhub-release-adapter-artifact-"));
+      await mkdir(join(workspace, "deliverables"));
+      const contents = "approved\n";
+      await writeFile(join(workspace, "deliverables/result.txt"), contents);
+
+      await expect(prepareRelease({
+        conditionFile: "deliverables/result.txt",
+        expectedSha256: digest(contents),
+        recipientAddress: RECIPIENT,
+        amount: "0.000001",
+        chainId: 11_155_111,
+        walletType: "eoa",
+        planPath: ".keeperhub/plan.json",
+        auditPath: "audit/release.jsonl"
+      }, {
+        client: fakeClient({ simulateTransfer: adapter.simulateTransfer }),
+        workspace,
+        now: () => AFTER_OPEN
+      })).rejects.toThrow(/simulation.*artifact|execution or transaction/i);
+    }
+  });
+
   it("rejects non-TTY execution before creating state or broadcasting", async () => {
     const submit = vi.fn(async () => ({ executionId: "never", status: "queued" }));
     const paths = await prepared(fakeClient({ executeTransfer: submit }));
@@ -232,7 +1124,7 @@ describe("conditional release", () => {
       isOutputTTY: true,
       question: async () => {
         await writeFile(join(conditionPaths.workspace, "deliverables/result.txt"), "changed after prompt\n");
-        return confirmationPhrase(conditionPlan.intentDigest);
+        return confirmationPhrase(conditionPlan.planDigest);
       }
     };
     await expect(executeRelease(executeInput(conditionPaths), conditionPaths.runtime)).rejects.toThrow(/condition/i);
@@ -248,7 +1140,7 @@ describe("conditional release", () => {
       isOutputTTY: true,
       question: async () => {
         currentTime = new Date(AFTER_OPEN.getTime() + 11 * 60 * 1_000);
-        return confirmationPhrase(expiryPlan.intentDigest);
+        return confirmationPhrase(expiryPlan.planDigest);
       }
     };
     await expect(executeRelease(executeInput(expiryPaths), expiryPaths.runtime)).rejects.toThrow(/expired/i);
@@ -270,7 +1162,7 @@ describe("conditional release", () => {
     paths.runtime.confirmIO = {
       isInputTTY: true,
       isOutputTTY: true,
-      question: async () => confirmationPhrase(plan.intentDigest)
+      question: async () => confirmationPhrase(plan.planDigest)
     };
     await expect(executeRelease(executeInput(paths), paths.runtime)).rejects.toThrow(/wallet changed/i);
     expect(submit).not.toHaveBeenCalled();
@@ -321,11 +1213,11 @@ describe("conditional release", () => {
     const sleep = vi.fn(async (_milliseconds: number) => undefined);
     const paths = await prepared(fakeClient({ executeTransfer: submit, getExecutionStatus: status }));
     paths.runtime.sleep = sleep;
-    const plan = JSON.parse(await readFile(join(paths.workspace, paths.planPath), "utf8")) as { intentDigest: string };
+    const plan = JSON.parse(await readFile(join(paths.workspace, paths.planPath), "utf8")) as { planDigest: string };
     paths.runtime.confirmIO = {
       isInputTTY: true,
       isOutputTTY: true,
-      question: async () => confirmationPhrase(plan.intentDigest)
+      question: async () => confirmationPhrase(plan.planDigest)
     };
 
     const result = await executeRelease(executeInput(paths), paths.runtime);
@@ -360,7 +1252,7 @@ describe("conditional release", () => {
     paths.runtime.confirmIO = {
       isInputTTY: true,
       isOutputTTY: true,
-      question: async () => confirmationPhrase(plan.intentDigest)
+      question: async () => confirmationPhrase(plan.planDigest)
     };
     await executeRelease(executeInput(paths), paths.runtime);
     expect(sleep.mock.calls[0]?.[0]).toBe(30_000);
@@ -390,7 +1282,7 @@ describe("conditional release", () => {
     paths.runtime.confirmIO = {
       isInputTTY: true,
       isOutputTTY: true,
-      question: async () => confirmationPhrase(plan.intentDigest)
+      question: async () => confirmationPhrase(plan.planDigest)
     };
 
     await expect(executeRelease(executeInput(paths), paths.runtime)).resolves.toMatchObject({ outcome: "completed" });
@@ -405,11 +1297,11 @@ describe("conditional release", () => {
       throw error;
     });
     const paths = await prepared(fakeClient({ executeTransfer: submit }));
-    const plan = JSON.parse(await readFile(join(paths.workspace, paths.planPath), "utf8")) as { intentDigest: string };
+    const plan = JSON.parse(await readFile(join(paths.workspace, paths.planPath), "utf8")) as { planDigest: string };
     paths.runtime.confirmIO = {
       isInputTTY: true,
       isOutputTTY: true,
-      question: async () => confirmationPhrase(plan.intentDigest)
+      question: async () => confirmationPhrase(plan.planDigest)
     };
     await expect(executeRelease(executeInput(paths), paths.runtime)).rejects.toThrow(/conflict/i);
     expect(submit).toHaveBeenCalledTimes(1);
@@ -445,7 +1337,7 @@ describe("conditional release", () => {
       question: async (prompt) => {
         expect(prompt).toContain("Existing idempotency digest");
         expect(prompt).not.toContain(UUID);
-        return retryConfirmationPhrase(plan.intentDigest);
+        return retryConfirmationPhrase(plan.planDigest);
       }
     };
 
@@ -469,7 +1361,7 @@ describe("conditional release", () => {
       isOutputTTY: true,
       question: async () => {
         await writeFile(join(paths.workspace, "deliverables/result.txt"), "changed before retry POST\n");
-        return retryConfirmationPhrase(plan.intentDigest);
+        return retryConfirmationPhrase(plan.planDigest);
       }
     };
     await expect(retryRelease({
@@ -600,7 +1492,7 @@ describe("conditional release", () => {
     paths.runtime.confirmIO = {
       isInputTTY: true,
       isOutputTTY: true,
-      question: async () => confirmationPhrase(plan.intentDigest)
+      question: async () => confirmationPhrase(plan.planDigest)
     };
     const result = await executeRelease(executeInput(paths), paths.runtime);
     expect(result.outcome).toBe("ambiguous");
@@ -631,7 +1523,7 @@ describe("conditional release", () => {
     paths.runtime.confirmIO = {
       isInputTTY: true,
       isOutputTTY: true,
-      question: async () => confirmationPhrase(plan.intentDigest)
+      question: async () => confirmationPhrase(plan.planDigest)
     };
     await executeRelease(executeInput(paths), paths.runtime);
 

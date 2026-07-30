@@ -4,6 +4,14 @@
   "description": "A safe KeeperHub starter and onboarding doctor for Claude Code, Codex, and Hermes.",
   "type": "module",
   "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "bin": {
     "keeperhub-starter": "./dist/bin.js"
   },
@@ -20,9 +28,9 @@
     "dev": "tsx src/cli.ts",
     "doctor": "tsx src/cli.ts doctor",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --exclude tests/integration/**",
+    "test": "vitest run",
     "test:watch": "vitest",
-    "test:integration": "vitest run tests/integration",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:secrets": "tsx scripts/secret-scan.ts",
     "condition:create": "tsx scripts/create-release-condition.ts",
     "verify": "npm run typecheck && npm run test && npm run build && npm run test:secrets && npm run pack:check && npm run test:package",

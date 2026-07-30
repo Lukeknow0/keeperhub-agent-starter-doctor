@@ -19,10 +19,11 @@ export interface ReleaseIntent {
 }
 
 export interface SimulationEvidence {
+  status: "simulated";
   from: string;
   to: string;
-  value: string | null;
-  gasEstimate: string | null;
+  value: string;
+  gasEstimate: string;
   wouldRevert: false;
 }
 
@@ -63,12 +64,16 @@ export interface TransferSimulationRequest extends TransferRequest {
 
 export interface TransferSimulationResult {
   success: boolean;
+  status: string;
   from: string;
   to: string;
   value?: string | null;
   gasEstimate?: string | null;
   wouldRevert: boolean;
   revertReason?: string | null;
+  executionId?: string | null;
+  transactionHash?: string | null;
+  explorerUrl?: string | null;
 }
 
 export interface TransferSubmission {

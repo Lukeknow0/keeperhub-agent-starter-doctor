@@ -150,6 +150,21 @@ describe("runDoctor", () => {
     expect(report.checks.find((entry) => entry.id === "keeperhub.gas")?.status).toBe("pass");
   });
 
+  it.each([
+    ["disabled", { ...chain, isEnabled: false }],
+    ["not a testnet", { ...chain, isTestnet: false }]
+  ])("never simulates when the selected Sepolia fixture is %s", async (_condition, unsafeChain) => {
+    const base = dependencies();
+    const client = base.client!;
+    vi.mocked(client.getChains).mockResolvedValue([unsafeChain]);
+
+    const report = await runDoctor(options, base);
+
+    expect(report.checks.find((entry) => entry.id === "keeperhub.chain")?.status).toBe("fail");
+    expect(report.checks.find((entry) => entry.id === "keeperhub.simulation")?.status).toBe("skip");
+    expect(client.simulateTransfer).not.toHaveBeenCalled();
+  });
+
   it("fails when simulation would revert", async () => {
     const base = dependencies();
     const client = base.client!;
@@ -202,7 +217,7 @@ describe("runDoctor", () => {
 
   it("rejects successful simulation evidence that does not match the exact self-transfer", async () => {
     const mismatches: Array<[Partial<TransferSimulation>, string]> = [
-      [{ status: "completed" }, "status is not simulated"],
+      [{ status: "completed" } as unknown as Partial<TransferSimulation>, "status is not simulated"],
       [{ from: "0x1111111111111111111111111111111111111111" }, "from does not match"],
       [{ to: "0x2222222222222222222222222222222222222222" }, "to does not match"],
       [{ value: "1" }, "value does not match"],

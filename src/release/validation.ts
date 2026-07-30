@@ -242,9 +242,18 @@ export function validatePlan(plan: ReleasePlan, now: Date, allowExpired = false)
 
   const createdAt = Date.parse(plan.createdAt);
   const expiresAt = Date.parse(plan.expiresAt);
-  if (!Number.isFinite(createdAt) || !Number.isFinite(expiresAt) || expiresAt <= createdAt) {
-    usage("Release plan has invalid timestamps.", "Validate release plan", ["createdAt/expiresAt are malformed."]);
+  if (
+    !Number.isFinite(createdAt)
+    || !Number.isFinite(expiresAt)
+    || expiresAt - createdAt !== 10 * 60 * 1_000
+  ) {
+    usage(
+      "Release plan must have an exact ten-minute TTL.",
+      "Validate release plan",
+      ["expiresAt must be exactly ten minutes after createdAt."]
+    );
   }
+  validateStoredSimulation(plan.simulation, plan.intent);
   if (!allowExpired && now.getTime() >= expiresAt) {
     usage(
       "Release plan has expired.",
@@ -259,6 +268,24 @@ export function validateSimulation(
   simulation: TransferSimulationResult,
   intent: ReleaseIntent
 ): SimulationEvidence {
+  if (simulation.status !== "simulated") {
+    usage(
+      "KeeperHub did not return a simulation-only status.",
+      "Validate simulation response",
+      [`Expected status "simulated"; received ${JSON.stringify(simulation.status)}.`]
+    );
+  }
+  if (
+    (simulation.executionId !== undefined && simulation.executionId !== null)
+    || (simulation.transactionHash !== undefined && simulation.transactionHash !== null)
+    || (simulation.explorerUrl !== undefined && simulation.explorerUrl !== null)
+  ) {
+    usage(
+      "KeeperHub simulation returned execution or transaction artifacts.",
+      "Validate simulation response",
+      ["A simulation must not contain an executionId, transaction hash, or explorer URL."]
+    );
+  }
   if (simulation.success !== true) {
     usage(
       "KeeperHub did not report a successful simulation.",
@@ -296,5 +323,24 @@ export function validateSimulation(
   if (!/^[0-9]+$/.test(gasEstimate) || BigInt(gasEstimate) <= 0n) {
     usage("KeeperHub returned an invalid gas estimate.", "Validate simulation response", [gasEstimate]);
   }
-  return { from, to, value, gasEstimate, wouldRevert: false };
+  return { status: "simulated", from, to, value, gasEstimate, wouldRevert: false };
+}
+
+function validateStoredSimulation(simulation: SimulationEvidence, intent: ReleaseIntent): void {
+  if (
+    simulation.status !== "simulated"
+    || simulation.wouldRevert !== false
+    || normalizeAddress(simulation.from, "simulation sender") !== intent.walletAddress
+    || normalizeAddress(simulation.to, "simulation recipient") !== intent.recipientAddress
+    || !/^[0-9]+$/.test(simulation.value)
+    || BigInt(simulation.value) !== ethToWei(intent.amount)
+    || !/^[0-9]+$/.test(simulation.gasEstimate)
+    || BigInt(simulation.gasEstimate) <= 0n
+  ) {
+    usage(
+      "Stored simulation evidence does not match the approved intent.",
+      "Validate release plan",
+      ["Simulation status, sender, recipient, value, Gas, or revert result is inconsistent."]
+    );
+  }
 }

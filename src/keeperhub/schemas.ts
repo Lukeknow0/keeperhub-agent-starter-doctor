@@ -63,7 +63,9 @@ export const transferAcceptedSchema = z.object({
 
 export const simulationSchema = z.object({
   success: z.boolean(),
-  status: z.string(),
+  status: z.string().refine((value) => value === "simulated", {
+    message: 'status must be "simulated"'
+  }),
   from: z.string().optional(),
   to: z.string().optional(),
   value: z.string().optional(),
@@ -71,6 +73,10 @@ export const simulationSchema = z.object({
   simulatedReturnValue: z.unknown().optional(),
   wouldRevert: z.boolean(),
   revertReason: z.string().optional(),
+  executionId: z.string().nullish(),
+  transactionHash: z.string().nullish(),
+  transactionLink: z.string().url().nullish(),
+  explorerUrl: z.string().url().nullish(),
   error: z.string().optional()
 }).passthrough();
 

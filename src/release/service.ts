@@ -5,15 +5,20 @@ import { AppError, UsageError, errorMessage } from "../core/errors.js";
 import { canonicalJson, sha256 } from "../core/json.js";
 import { redactString } from "../core/redact.js";
 import type { JsonValue } from "../core/types.js";
-import { appendAuditEvent } from "./audit.js";
-import { nodeConfirmIO, requestConfirmation, requestRetryConfirmation } from "./confirm.js";
+import { appendAuditEvent, reserveAuditDestination } from "./audit.js";
+import {
+  formalReleaseSummary,
+  nodeConfirmIO,
+  requestConfirmation,
+  requestRetryConfirmation
+} from "./confirm.js";
 import {
   assertStateFileAbsent,
   createStateFile,
   readPlanFile,
   readStateFile,
+  reservePlanFile,
   signState,
-  writePlanFile,
   writeStateFile
 } from "./files.js";
 import type {
@@ -31,6 +36,7 @@ import {
   inspectFileCondition,
   normalizeAddress,
   normalizeAmount,
+  resolveWorkspacePath,
   validatePlan,
   validateSimulation,
   verifyFileCondition
@@ -39,6 +45,8 @@ import {
 const MAX_SAFE_RETRIES = 3;
 const MAX_ATTEMPTS = 1 + MAX_SAFE_RETRIES;
 const MAX_RETRY_DELAY_MS = 30_000;
+/** Poll hints are never allowed to make a CLI sleep longer than 30 seconds. */
+export const MAX_POLL_INTERVAL_MS = 30_000;
 const TERMINAL_STATUSES = new Set(["completed", "failed", "cancelled", "canceled"]);
 const TRANSACTION_HASH_PATTERN = /^0x[0-9a-fA-F]{64}$/;
 // The rehearsal branch must not broadcast before the conservative hackathon
@@ -132,6 +140,19 @@ async function revalidateBeforePost(
     });
   }
   await verifyFileCondition(runtime.workspace, currentPlan.intent.condition);
+  const currentChain = await runtime.client.getChain(currentPlan.intent.chainId);
+  if (
+    currentChain === null
+    || currentChain.chainId !== SEPOLIA_CHAIN_ID
+    || currentChain.enabled !== true
+    || currentChain.isTestnet !== true
+  ) {
+    throw new UsageError("Ethereum Sepolia is no longer enabled as a testnet.", {
+      step: "Revalidate release network before broadcast",
+      causes: ["KeeperHub must report enabled testnet Sepolia immediately before every POST."],
+      fixCommands: ["node dist/cli.js release prepare --help"]
+    });
+  }
   const currentWallet = normalizeAddress(
     (await runtime.client.getWallet(currentPlan.intent.chainId)).walletAddress,
     "wallet address"
@@ -153,58 +174,105 @@ export async function prepareRelease(input: PrepareReleaseInput, runtime: Releas
   assertSepoliaEoa(input.chainId, input.walletType);
   const now = clock(runtime)();
   const condition = await inspectFileCondition(runtime.workspace, input.conditionFile, input.expectedSha256);
-  const chain = await runtime.client.getChain(input.chainId);
-  if (chain === null || chain.chainId !== SEPOLIA_CHAIN_ID || !chain.enabled || !chain.isTestnet) {
-    throw new AppError("Ethereum Sepolia is not available for release simulation.", {
-      step: "Check KeeperHub network",
-      causes: [chain === null ? "Chain was not returned by KeeperHub." : "Chain is disabled or is not marked as testnet."]
+  const [planDestination, auditDestination] = await Promise.all([
+    resolveWorkspacePath(runtime.workspace, input.planPath),
+    resolveWorkspacePath(runtime.workspace, input.auditPath)
+  ]);
+  if (planDestination === auditDestination) {
+    throw new UsageError("Release plan and audit destinations must be distinct paths.", {
+      step: "Preflight release output destinations",
+      causes: ["A JSON plan cannot also be a JSONL audit chain."]
     });
   }
-  const wallet = await runtime.client.getWallet(input.chainId);
-  const walletAddress = normalizeAddress(wallet.walletAddress, "wallet address");
-  const intent = {
-    schemaVersion: 1 as const,
-    chainId: input.chainId,
-    walletType: "eoa" as const,
-    walletAddress,
-    recipientAddress: normalizeAddress(input.recipientAddress, "recipient address"),
-    amount: normalizeAmount(input.amount),
-    condition
-  };
-  const intentDigest = createIntentDigest(intent);
-  const rawSimulation = await runtime.client.simulateTransfer({
-    chainId: intent.chainId,
-    recipientAddress: intent.recipientAddress,
-    amount: intent.amount,
-    simulate: true
-  });
-  const simulation = validateSimulation(rawSimulation, intent);
-  const plan = createPlan({
-    schemaVersion: 1,
-    createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + PLAN_TTL_MS).toISOString(),
-    intent,
-    intentDigest,
-    simulation
-  });
-  await writePlanFile(runtime.workspace, input.planPath, plan);
-  await appendAuditEvent(runtime.workspace, input.auditPath, "condition", {
-    type: condition.type,
-    path: condition.path,
-    sha256: condition.sha256,
-    satisfied: true
-  }, now);
-  await appendAuditEvent(runtime.workspace, input.auditPath, "simulation", {
-    planDigest: plan.planDigest,
-    intentDigest,
-    chainId: intent.chainId,
-    from: simulation.from,
-    to: simulation.to,
-    amount: intent.amount,
-    gasEstimate: simulation.gasEstimate,
-    wouldRevert: simulation.wouldRevert
-  }, now);
-  return plan;
+  const planReservation = await reservePlanFile(runtime.workspace, input.planPath);
+  let auditReservation: Awaited<ReturnType<typeof reserveAuditDestination>> | null = null;
+  try {
+    auditReservation = await reserveAuditDestination(runtime.workspace, input.auditPath);
+    if (
+      planReservation.identity.dev === auditReservation.identity.dev
+      && planReservation.identity.ino === auditReservation.identity.ino
+    ) {
+      throw new UsageError("Release plan and audit destinations resolve to the same file.", {
+        step: "Preflight release output destinations",
+        causes: ["Case-folded or normalization-equivalent paths are not distinct destinations."]
+      });
+    }
+    const chain = await runtime.client.getChain(input.chainId);
+    if (chain === null || chain.chainId !== SEPOLIA_CHAIN_ID || !chain.enabled || !chain.isTestnet) {
+      throw new AppError("Ethereum Sepolia is not available for release simulation.", {
+        step: "Check KeeperHub network",
+        causes: [chain === null ? "Chain was not returned by KeeperHub." : "Chain is disabled or is not marked as testnet."]
+      });
+    }
+    const wallet = await runtime.client.getWallet(input.chainId);
+    const walletAddress = normalizeAddress(wallet.walletAddress, "wallet address");
+    const intent = {
+      schemaVersion: 1 as const,
+      chainId: input.chainId,
+      walletType: "eoa" as const,
+      walletAddress,
+      recipientAddress: normalizeAddress(input.recipientAddress, "recipient address"),
+      amount: normalizeAmount(input.amount),
+      condition
+    };
+    const intentDigest = createIntentDigest(intent);
+    const rawSimulation = await runtime.client.simulateTransfer({
+      chainId: intent.chainId,
+      recipientAddress: intent.recipientAddress,
+      amount: intent.amount,
+      simulate: true
+    });
+    const simulation = validateSimulation(rawSimulation, intent);
+    const plan = createPlan({
+      schemaVersion: 1,
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + PLAN_TTL_MS).toISOString(),
+      intent,
+      intentDigest,
+      simulation
+    });
+    await auditReservation.assertRetained();
+    await auditReservation.append("condition", {
+      type: condition.type,
+      path: condition.path,
+      sha256: condition.sha256,
+      satisfied: true
+    }, now);
+    await auditReservation.append("simulation", {
+      planDigest: plan.planDigest,
+      intentDigest,
+      chainId: intent.chainId,
+      status: simulation.status,
+      from: simulation.from,
+      to: simulation.to,
+      value: simulation.value,
+      amount: intent.amount,
+      gasEstimate: simulation.gasEstimate,
+      wouldRevert: simulation.wouldRevert
+    }, now);
+    await auditReservation.assertRetained();
+    await planReservation.write(plan);
+    await auditReservation.assertRetained();
+    await auditReservation.release();
+    auditReservation = null;
+    await planReservation.commit();
+    return plan;
+  } finally {
+    let planCleanupError: unknown;
+    let auditCleanupError: unknown;
+    try {
+      await auditReservation?.release();
+    } catch (error) {
+      auditCleanupError = error;
+    }
+    try {
+      await planReservation.rollback();
+    } catch (error) {
+      planCleanupError = error;
+    }
+    if (planCleanupError !== undefined) throw planCleanupError;
+    if (auditCleanupError !== undefined) throw auditCleanupError;
+  }
 }
 
 interface ErrorShape {
@@ -442,7 +510,9 @@ async function pollStatus(
     if (terminal(status.status)) return { state: current, status };
     if (poll + 1 < maxPolls) {
       const hint = status.pollIntervalHintMs;
-      const delay = typeof hint === "number" && Number.isFinite(hint) && hint >= 0 ? hint : 1_000;
+      const delay = typeof hint === "number" && Number.isFinite(hint) && hint > 0
+        ? Math.min(hint, MAX_POLL_INTERVAL_MS)
+        : 1_000;
       await sleep(delay);
     }
   }
@@ -467,19 +537,8 @@ export async function executeRelease(input: ExecuteReleaseInput, runtime: Releas
   }
   await verifyFileCondition(runtime.workspace, plan.intent.condition);
   await assertStateFileAbsent(runtime.workspace, input.statePath);
-  const summary = [
-    "KeeperHub release confirmation",
-    `  Network: Ethereum Sepolia (${plan.intent.chainId})`,
-    `  From: ${plan.intent.walletAddress}`,
-    `  To: ${plan.intent.recipientAddress}`,
-    `  Amount: ${plan.intent.amount} ETH`,
-    `  Condition: ${plan.intent.condition.path} sha256:${plan.intent.condition.sha256}`,
-    `  Simulation gas estimate: ${plan.simulation.gasEstimate}`,
-    `  Simulation would revert: ${plan.simulation.wouldRevert}`,
-    `  Plan digest: ${plan.planDigest}`,
-    `  Expires: ${plan.expiresAt}`
-  ].join("\n");
-  const confirmed = await requestConfirmation(runtime.confirmIO ?? nodeConfirmIO(), plan.intentDigest, summary);
+  const summary = formalReleaseSummary(plan);
+  const confirmed = await requestConfirmation(runtime.confirmIO ?? nodeConfirmIO(), plan.planDigest, summary);
   if (!confirmed) {
     await appendAuditEvent(runtime.workspace, input.auditPath, "confirmation_cancelled", {
       planDigest: plan.planDigest,
@@ -518,7 +577,7 @@ export async function executeRelease(input: ExecuteReleaseInput, runtime: Releas
   await appendAuditEvent(runtime.workspace, input.auditPath, "confirmation", {
     planDigest: plan.planDigest,
     intentDigest: plan.intentDigest,
-    phraseSuffix: plan.intentDigest.slice(0, 8)
+    phraseSuffix: plan.planDigest.slice(0, 8)
   }, now());
   state = await submitWithSafeRetries(plan, state, { ...input, allowExpiredPlan: false }, runtime);
   const polled = await pollStatus(state, input, runtime);
@@ -554,20 +613,16 @@ export async function retryRelease(input: RetryReleaseInput, runtime: ReleaseRun
         fixCommands: ["node dist/cli.js release status --help"]
       });
     }
-    const retrySummary = [
-      "KeeperHub safe retry confirmation",
-      `  Network: Ethereum Sepolia (${plan.intent.chainId})`,
-      `  From: ${plan.intent.walletAddress}`,
-      `  To: ${plan.intent.recipientAddress}`,
-      `  Amount: ${plan.intent.amount} ETH`,
-      `  Simulation gas estimate: ${plan.simulation.gasEstimate}`,
-      `  Intent digest: ${plan.intentDigest}`,
-      `  Existing idempotency digest: ${state.idempotencyDigest}`,
-      `  Attempts used: ${state.attemptCount}/${state.maxAttempts}`
-    ].join("\n");
+    const retrySummary = formalReleaseSummary(plan, {
+      retry: {
+        idempotencyDigest: state.idempotencyDigest,
+        attemptCount: state.attemptCount,
+        maxAttempts: state.maxAttempts
+      }
+    });
     const confirmed = await requestRetryConfirmation(
       runtime.confirmIO ?? nodeConfirmIO(),
-      plan.intentDigest,
+      plan.planDigest,
       retrySummary
     );
     if (!confirmed) {

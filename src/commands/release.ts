@@ -9,6 +9,7 @@ import { numericChainId } from "../keeperhub/schemas.js";
 import { verifyAuditFile } from "../release/audit.js";
 import {
   executeRelease,
+  MAX_POLL_INTERVAL_MS,
   prepareRelease,
   retryRelease,
   statusRelease
@@ -62,6 +63,7 @@ export function createReleaseClientAdapter(client: KeeperHubClient): ReleaseKeep
       });
       const result: TransferSimulationResult = {
         success: simulation.success,
+        status: simulation.status,
         from: simulation.from ?? "",
         to: simulation.to ?? "",
         wouldRevert: simulation.wouldRevert
@@ -69,6 +71,15 @@ export function createReleaseClientAdapter(client: KeeperHubClient): ReleaseKeep
       if (simulation.value !== undefined) result.value = simulation.value;
       if (simulation.gasEstimate !== undefined) result.gasEstimate = simulation.gasEstimate;
       if (simulation.revertReason !== undefined) result.revertReason = simulation.revertReason;
+      if (simulation.executionId !== undefined) result.executionId = simulation.executionId;
+      if (simulation.transactionHash !== undefined) result.transactionHash = simulation.transactionHash;
+      if (simulation.explorerUrl !== undefined && simulation.explorerUrl !== null) {
+        result.explorerUrl = simulation.explorerUrl;
+      } else if (simulation.transactionLink !== undefined && simulation.transactionLink !== null) {
+        result.explorerUrl = simulation.transactionLink;
+      } else if (simulation.explorerUrl === null || simulation.transactionLink === null) {
+        result.explorerUrl = null;
+      }
       return result;
     },
     async executeTransfer(request, options) {
@@ -84,8 +95,8 @@ export function createReleaseClientAdapter(client: KeeperHubClient): ReleaseKeep
       };
       if (response.data.transactionHash !== undefined) status.transactionHash = response.data.transactionHash;
       if (response.data.transactionLink !== undefined) status.explorerUrl = response.data.transactionLink;
-      if (Number.isFinite(hintSeconds) && hintSeconds !== null && hintSeconds >= 0) {
-        status.pollIntervalHintMs = hintSeconds * 1_000;
+      if (Number.isFinite(hintSeconds) && hintSeconds !== null && hintSeconds > 0) {
+        status.pollIntervalHintMs = Math.min(hintSeconds * 1_000, MAX_POLL_INTERVAL_MS);
       }
       if (typeof response.data.result === "object" && response.data.result !== null && !Array.isArray(response.data.result)) {
         status.result = response.data.result as Record<string, JsonValue>;

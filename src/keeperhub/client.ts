@@ -103,8 +103,7 @@ export class KeeperHubClient {
       method: "POST",
       body,
       schema: simulationSchema,
-      authenticated: true,
-      safeToRetry: true
+      authenticated: true
     })).data;
   }
 

@@ -85,21 +85,18 @@ describe("KeeperHubClient", () => {
     expect(result.data.executionId).toBe("execution-1");
   });
 
-  it("retries transient simulation failures but never retries a broadcast", async () => {
-    let simulationAttempts = 0;
-    const simulationFetch = vi.fn(async () => {
-      simulationAttempts += 1;
-      return simulationAttempts < 3
-        ? jsonResponse({ error: "temporary" }, { status: 503, headers: { "Retry-After": "0" } })
-        : jsonResponse({ success: true, status: "simulated", wouldRevert: false });
-    });
+  it("attempts a simulation and a broadcast only once", async () => {
+    const simulationFetch = vi.fn(async () => jsonResponse(
+      { error: "temporary" },
+      { status: 503, headers: { "Retry-After": "0" } }
+    ));
     const simulationClient = new KeeperHubClient({ apiKey: "kh_fixture", fetch: simulationFetch });
     await expect(simulationClient.simulateTransfer({
       chainId: 11_155_111,
       recipientAddress: "0xabc",
       amount: "0.000001"
-    })).resolves.toMatchObject({ success: true });
-    expect(simulationFetch).toHaveBeenCalledTimes(3);
+    })).rejects.toMatchObject({ status: 503 });
+    expect(simulationFetch).toHaveBeenCalledTimes(1);
 
     const broadcastFetch = vi.fn(async () => jsonResponse(
       { error: "temporary" },
