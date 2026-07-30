@@ -15,15 +15,15 @@ Relevant actors are the authorized operator, a fallible or prompt-injected Agent
 - OAuth is separate from organization API-key authentication. Claude and Codex use hosted-MCP browser OAuth; Doctor independently verifies a protected REST request and authenticated MCP `tools_documentation` with `KH_API_KEY`. Configuration or reachability alone is not proof.
 - During Hermes onboarding, `KEEPERHUB_ENABLE_WRITES` was unset. The official plugin structurally withheld ten write/execute registrations. Claude and Codex were prompt-scoped to read-only; their hosted write tools were not structurally disabled.
 - The release lane accepts only Ethereum Sepolia (`11155111`) and wallet type `eoa`; mainnet and Safe release requests are rejected.
-- The exact wallet `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`, Turnkey EOA semantics, no configured Sepolia Safe Sender, and “No cap set” conclusion come from official Turnkey documentation plus independent authenticated UI proof. Doctor’s balances response alone does not establish wallet type or spend-cap sufficiency.
+- The exact wallet `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`, Turnkey EOA semantics, no configured Sepolia Safe Sender, and “No cap set” conclusion come from official Turnkey documentation plus a recorded authenticated observation. Raw authenticated UI evidence is unavailable in the public repository. Doctor’s balances response alone does not establish wallet type or spend-cap sufficiency.
 
 ## Intent integrity and approval
 
-`release prepare` verifies a workspace-contained `file-sha256` condition, normalizes the recipient and amount, binds chain/wallet/recipient/amount/condition into an intent digest, and binds the successful strict simulation into a plan digest. Simulation is hard-coded as JSON boolean `true`; it creates no transaction and grants no authority.
+`release prepare` verifies a workspace-contained `file-sha256` condition, normalizes the recipient and amount, binds chain/wallet/recipient/amount/condition into an intent digest, and binds the successful strict simulation into a plan digest. Simulation is hard-coded as JSON boolean `true`; it creates no transaction and grants no authority. For the final transaction, `release prepare` may run exactly once and only after the formal raw screen recording starts; final plan/state/audit paths must not exist before capture.
 
 The plan expires after ten minutes. Before any POST, the service rereads the plan, revalidates both digests and the complete intent, rehashes the condition file, and rereads the active wallet. A change to chain, wallet, recipient, amount, condition, or simulation invalidates approval.
 
-Execution requires stdin and stdout to be real TTYs. The operator sees network, from, to, amount, condition digest, simulation result, plan digest, and expiry, then must type exactly `CONFIRM <intent-digest-prefix>`. There is no noninteractive confirmation flag. A cross-process retry separately requires `CONFIRM RETRY <intent-digest-prefix>`.
+The recorded final sequence first shows the full prepare JSON summary, then requires independent user authorization to proceed. Prepare does not display the TTY phrase. Only after that authorization may execution start. Execution requires stdin and stdout to be real TTYs, repeats the exact summary, and separately displays and requires `CONFIRM <plan-digest-prefix>`. There is no noninteractive confirmation flag. A cross-process retry separately requires `CONFIRM RETRY <plan-digest-prefix>`.
 
 ## State, retry, status, and receipt safety
 
@@ -39,7 +39,7 @@ The CLI validates KeeperHub completion evidence matched to the stored execution 
 
 The public JSONL audit recursively redacts secret-named fields and credential-shaped strings. It stores the SHA-256 of the idempotency key, never the raw key. Each record binds its index, timestamp, event, redacted data, and prior row hash; `audit verify` recomputes the chain and rejects blank, malformed, reordered, altered, or unlinked records.
 
-Never open, capture, or publish the whole `.keeperhub/` directory. The default `.keeperhub/release-state.json` contains the raw idempotency key; a custom state such as `.keeperhub/final-release-state.json` can contain the same private material. Neither file may appear in a demo or repository. Terminal account identity, OAuth screens, and credentials are likewise private. Public wallet addresses, plan/intent digests, execution IDs, transaction hashes, and independently verified receipt URLs may be shown only in their correct evidence category.
+Never open, capture, or publish the whole `.keeperhub/` directory. The default `.keeperhub/release-plan.json`, `.keeperhub/release-state.json`, and `audit/release.jsonl` namespace is non-final rehearsal only. The explicit final state `.keeperhub/final-release-state.json` contains the raw idempotency key; neither state file may appear in a demo or repository. Terminal account identity, OAuth screens, and credentials are likewise private. Public wallet addresses, plan/intent digests, execution IDs, transaction hashes, and independently verified receipt URLs may be shown only in their correct evidence category.
 
 ## Low-level primitive warning
 
@@ -54,5 +54,6 @@ Never open, capture, or publish the whole `.keeperhub/` directory. The default `
 - A hash chain is tamper-evident only from a trusted head/reference; it does not provide external timestamping or prevent deletion of the whole file.
 - Status and explorer validation rely on KeeperHub availability/correctness and Etherscan URL conventions; chain reorgs and external service failures remain possible.
 - “No cap set” is a UI observation, not a recommendation to leave limits unset.
+- A failed, ambiguous, interrupted, privacy-exposing, or expired final take hard-aborts. It never triggers an automatic second simulation; a new attempt requires a wholly new formal recording and readiness decision.
 - The final recipient has not been supplied. No final signing, execution, audit, hash, receipt, or transaction link exists.
 - Pre-event source eligibility, the authoritative deadline, and required source visibility before `Apply` remain unresolved official-rule ambiguities. Until clarified, final execution, publication, submission, and bounty application remain blocked.

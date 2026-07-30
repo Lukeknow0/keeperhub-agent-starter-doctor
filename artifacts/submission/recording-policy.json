@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "status": "recording-only-not-run",
+  "policyKind": "machine-readable-static-policy",
+  "enforcementScope": "repository tests check policy and documentation consistency; runtime transaction controls remain in the CLI",
+  "maxFinalSimulations": 1,
+  "finalNamespace": {
+    "plan": ".keeperhub/final-release-plan.json",
+    "state": ".keeperhub/final-release-state.json",
+    "audit": "audit/final-release.jsonl",
+    "video": "artifacts/private/keeperhub-demo-final.mov"
+  },
+  "defaultNamespaceClassification": {
+    ".keeperhub/release-plan.json": "non-final-rehearsal",
+    ".keeperhub/release-state.json": "non-final-rehearsal",
+    "audit/release.jsonl": "non-final-rehearsal"
+  },
+  "preRecording": {
+    "planMustNotExist": true,
+    "stateMustNotExist": true,
+    "auditMustNotExist": true
+  },
+  "prepare": {
+    "command": "release prepare",
+    "allowedCount": 1,
+    "onlyAfterRecordingStarts": true,
+    "simulate": true
+  },
+  "finalSequence": [
+    "recording-started",
+    "release-prepare-simulate-true",
+    "full-summary-shown",
+    "independent-user-authorization",
+    "release-execute-started",
+    "real-tty-confirm-phrase-entered",
+    "status-checked",
+    "receipt-independently-verified",
+    "audit-verified"
+  ],
+  "prohibitedFinalCommands": [
+    "doctor",
+    "test:integration",
+    "live-fixture-prepare"
+  ],
+  "failurePolicy": {
+    "hardAbort": true,
+    "automaticSecondSimulation": false,
+    "expiryRequiresNewRecording": true
+  },
+  "evidenceProvenance": {
+    "policy": "judge-visible tracked artifact",
+    "rawFinalRecording": "unavailable; formal recording has not run",
+    "authenticatedUi": "recorded authenticated observation where cited",
+    "officialDocumentation": "official KeeperHub documentation where cited"
+  }
+}

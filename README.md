@@ -10,6 +10,8 @@ KeeperHub Agent Starter + Doctor turns a fragile, multi-Agent onboarding path in
 
 **Best Onboarding UX Improvement fit:** the project combines copyable setup adapters, a structured `Step / Cause / Fix / Evidence` Doctor, a reproducible blocker teardown, and a safety workflow toward a final transaction without hiding authentication, wallet, or retry state. It also targets the main prize through KeeperHub execution, strict simulation, exact human approval, idempotent recovery, KeeperHub completion validation, and a tamper-evident audit trail. Independent public explorer/RPC receipt verification remains a separate final-submission checkpoint.
 
+**Final execution status: `recording-only-not-run`.** No final simulation may occur before the formal raw screen recording. During that one recording, exactly one strict `simulate: true` prepare may run, followed by the full summary, independent user authorization, execution, a separate real-TTY `CONFIRM` phrase, status, independent receipt verification, and final audit verification. See the [single-recording runbook](docs/submission/recording-runbook.md).
+
 ### Verified three-Agent support
 
 | Agent | Official path | Verified result | Write boundary during evidence |
@@ -63,8 +65,11 @@ The supported safety workflow is:
 
 ```text
 file-sha256 condition
-  → strict KeeperHub simulation
-  → exact real-TTY human confirmation
+  → formal raw recording starts
+  → exactly one strict KeeperHub simulation
+  → full summary
+  → independent user authorization
+  → separate exact real-TTY confirmation
   → exclusive mode-0600 state
   → same-body/same-key retry or status polling
   → KeeperHub completion evidence validation
@@ -72,37 +77,25 @@ file-sha256 condition
   → redacted hash-chain audit
 ```
 
-Prepare against the immutable submission condition:
+The immutable submission condition is:
 
 ```bash
 shasum -a 256 artifacts/submission/release-condition.json
 # expected: 2cfae70f499548b2a1fd3a5b75c87ba597dacf82b63b4c9c066bc451b9042a46
 
-node dist/cli.js release prepare \
-  --condition-file artifacts/submission/release-condition.json \
-  --expected-sha256 2cfae70f499548b2a1fd3a5b75c87ba597dacf82b63b4c9c066bc451b9042a46 \
-  --recipient <separately-approved-recipient> \
-  --amount 0.000001 \
-  --chain-id 11155111 \
-  --wallet-type eoa
 ```
 
-The condition binds verification/onboarding evidence from source commit `afcf7028a7fe365760f7df5d76cf64b3e1f80923`. The organization wallet address is `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`; its Turnkey EOA semantics and absence of a configured Safe are established by official Turnkey documentation plus independent authenticated UI proof, not by Doctor alone.
+The condition binds verification/onboarding evidence from source commit `afcf7028a7fe365760f7df5d76cf64b3e1f80923`. The organization wallet address is `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`; its Turnkey EOA semantics and absence of a configured Safe are supported by official Turnkey documentation plus a recorded authenticated observation, not by Doctor alone. Raw authenticated UI evidence is unavailable in the public repository.
 
-After a separately authorized exact-summary checkpoint:
+The only final namespace is `.keeperhub/final-release-plan.json`, `.keeperhub/final-release-state.json`, and `audit/final-release.jsonl`. Those paths must be absent before capture and may be created only in the order defined by the runbook. The default `.keeperhub/release-plan.json`, `.keeperhub/release-state.json`, and `audit/release.jsonl` paths are non-final rehearsal paths.
 
-```bash
-node dist/cli.js release execute --wallet-type eoa
-node dist/cli.js release retry
-node dist/cli.js release status --poll
-node dist/cli.js audit verify audit/release.jsonl
-```
+Any failed, ambiguous, interrupted, exposed, or expired take hard-aborts. There is no automatic second simulation; a new attempt requires a new formal recording and readiness decision.
 
 - Final recipient: **Pending — not supplied.**
 - Final signing/execution: **Pending — requires the separately authorized checkpoint.**
 - Final transaction hash and explorer link: **Pending — no final transaction exists.**
 - Public repository: **Pending — requires the separately authorized publication checkpoint.**
-- Demo video: **Pending — requires a compliant final execution and separately authorized upload checkpoint.**
+- Demo video: **Pending — raw final video unavailable; formal recording has not run.**
 - DoraHacks submission and bounty application: **Pending — eligibility remains unresolved and each action requires its own checkpoint.**
 
 The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d8df6352` is **pre-event onboarding evidence only**. It is not a final-transaction value.
@@ -110,16 +103,20 @@ The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d
 ### Judge map
 
 - [Architecture](docs/submission/architecture.md) and [security model](docs/submission/security.md)
-- [Verification evidence](artifacts/submission/verification.md) — frozen historical gate: 8 files / 62 tests
-- [Current offline delivery gate](artifacts/submission/delivery-gate.md) — 65/65 tests, package smoke, history secret scan, and provenance checks
-- Current local gate after the isolated condition-generator increment: 9 test files / 65 tests, including 3 Git-process generator tests
+- [Verification evidence](artifacts/submission/verification.md) — frozen dated onboarding/Doctor/integration record
+- [Current offline delivery gate](artifacts/submission/delivery-gate.md) — typecheck, unit/policy tests, build, package smoke, secret scan, links, and provenance
 - Local verification: `npm run verify`; focused secret check: `node --experimental-strip-types scripts/secret-scan.ts`
 - [Ranked blockers and bounty copy](docs/submission/bounty-copy.md)
-- [Historical patch evidence](artifacts/upstream/README.md) and [PR #75 resolution](docs/upstream-pr-draft.md)
-- [Two-to-three-minute demo script](docs/submission/demo-script.md)
+- [Current Quickstart auth patch](patches/keeperhub-cli-quickstart-auth.patch), [clean-apply evidence](artifacts/upstream/quickstart-patch-validation.txt), [focused tests](artifacts/upstream/quickstart-focused-tests.txt), and [prepared PR draft](docs/upstream-quickstart-pr-draft.md)
+- [Historical Doctor patch evidence](artifacts/upstream/README.md) and [PR #75 resolution](docs/upstream-pr-draft.md)
+- [Flexible one-take demo script](docs/submission/demo-script.md)
+- [Single-recording runbook](docs/submission/recording-runbook.md) and [machine-readable policy](artifacts/submission/recording-policy.json)
+- [Prepared DoraHacks form-field map](docs/submission/form-field-map.md)
 - [DoraHacks copy](docs/submission/dorahacks-copy.md)
 
-The historical Doctor patch/tests were independently recorded against KeeperHub CLI v0.10.0 on 2026-07-14. Equivalent official [KeeperHub/cli PR #75](https://github.com/KeeperHub/cli/pull/75) later merged at `72f68896aea6a792edd149d4ad42f90251eca332`; no duplicate PR was opened, and this project claims neither authorship nor influence.
+The current mergeable contribution corrects the KeeperHub CLI Quickstart device-login description against v0.13.1 commit `ef71237aecf9f448f65f808b859423bd99618149`: the user opens the printed URL, confirms the one-time code, and the resulting organization API key is stored in the printed `hosts.yml` path. It applies cleanly and passes documentation generation plus focused auth/config tests.
+
+Separately, the historical Doctor patch/tests were independently recorded against KeeperHub CLI v0.10.0 on 2026-07-14. Equivalent official [KeeperHub/cli PR #75](https://github.com/KeeperHub/cli/pull/75) later merged at `72f68896aea6a792edd149d4ad42f90251eca332`. The no-duplicate-PR decision applies only to this historical Doctor fix; this project claims neither authorship nor influence.
 
 ## What it does
 
@@ -190,7 +187,7 @@ Configured is not the same as authenticated. Doctor reports Agent configuration,
 
 The demonstration condition is deliberately simple and reproducible: the approved deliverable must remain inside the workspace and its SHA-256 must match an operator-approved digest.
 
-Prepare the exact intent and run a side-effect-free KeeperHub simulation:
+The following generic example uses the default **non-final rehearsal** namespace. It must not be used as final submission evidence:
 
 ```bash
 shasum -a 256 demo/proof.txt
@@ -211,9 +208,9 @@ Only after the compliance blockers are resolved and a separately authorized exac
 node dist/cli.js release execute --wallet-type eoa
 ```
 
-The command shows the complete transaction summary and accepts only `CONFIRM <intent-digest-prefix>` from a real TTY. There is no `--yes` or CI bypass. A cancelled, piped, expired, modified, Safe, non-Sepolia, or condition-mismatched request produces zero broadcast calls.
+The command shows the complete transaction summary and accepts only the displayed `CONFIRM <plan-digest-prefix>` phrase from a real TTY. There is no `--yes` or CI bypass. A cancelled, piped, expired, modified, Safe, non-Sepolia, or condition-mismatched request produces zero broadcast calls.
 
-Safe recovery uses the private state containing the original idempotency key:
+Safe rehearsal recovery uses the default private state containing the original idempotency key:
 
 ```bash
 node dist/cli.js release retry
@@ -221,7 +218,7 @@ node dist/cli.js release status --poll
 node dist/cli.js audit verify audit/release.jsonl
 ```
 
-The public audit stores only the idempotency key's SHA-256 and chains every JSONL event with `previousHash` and `hash`.
+Here `audit/release.jsonl` is non-final rehearsal evidence. The final public audit path is exactly `audit/final-release.jsonl`; it stores only the idempotency key's SHA-256 and chains every JSONL event with `previousHash` and `hash`.
 
 ## Architecture
 
@@ -298,14 +295,14 @@ This transaction occurred before the event and is not represented as the final s
 | P0 | `kh doctor` reports authenticated for HTTP 200 `null` | Independently reproduced on 2026-07-14; official equivalent fix later merged in [PR #75](https://github.com/KeeperHub/cli/pull/75) | Resolved upstream with a protected credential probe |
 | P1 | Doctor protected checks omit Bearer auth | Independently reproduced on 2026-07-14; [PR #75](https://github.com/KeeperHub/cli/pull/75) now resolves/sends `Authorization` | Resolved upstream with authenticated client/probe handling |
 | P1 | Hermes direct OAuth connects with zero tools | Add hosted MCP with OAuth; logs show an async-lock exception | Recommend/fix the official plugin path |
-| P1 | Wallet balance decoder expects string `chainId` | Live API returns a numeric `chainId` | Accept number or string |
-| P1 | Wallet field mismatch | Doctor expects `address`; live response uses `walletAddress` | Parse the live field with compatibility fallback |
+| P1 | Wallet balance decoder expects string `chainId` | Recorded API response used a numeric `chainId` | Accept number or string |
+| P1 | Wallet field mismatch | Doctor expects `address`; recorded response used `walletAddress` | Parse the recorded field with compatibility fallback |
 | P1 | macOS Gatekeeper rejects the release binary | Install with Homebrew and run the binary | Correct signing/notarization |
 | P2 | Insufficient balance simulation is opaque | Simulate an amount above the wallet balance | Surface a clear balance diagnosis |
 | P2 | `KH_CONFIG_DIR` is documented but ignored | Set it during login; files still go to the XDG directory | Implement or remove it |
 | P2 | A public workflow probe can return 200 unauthenticated | Independently reproduced on 2026-07-14; [PR #75](https://github.com/KeeperHub/cli/pull/75) uses protected `/api/projects` instead | Resolved upstream with the shared protected credential probe |
 
-The Doctor issue was independently reproduced and patched locally on 2026-07-14 against v0.10.0. An equivalent official fix later merged as [KeeperHub/cli PR #75](https://github.com/KeeperHub/cli/pull/75) (`72f68896aea6a792edd149d4ad42f90251eca332`), so no duplicate external PR was opened. The historical v0.10.0 patch and tests remain preserved evidence under `patches/` and `artifacts/upstream/`; see `docs/upstream-pr-draft.md` for the upstream-resolution record.
+The Doctor issue was independently reproduced and patched locally on 2026-07-14 against v0.10.0. An equivalent official fix later merged as [KeeperHub/cli PR #75](https://github.com/KeeperHub/cli/pull/75) (`72f68896aea6a792edd149d4ad42f90251eca332`), so no duplicate Doctor PR was opened. The historical v0.10.0 patch and tests remain preserved evidence under `patches/` and `artifacts/upstream/`; see `docs/upstream-pr-draft.md` for the upstream-resolution record. This historical decision does not block the separate current [Quickstart documentation patch](patches/keeperhub-cli-quickstart-auth.patch).
 
 ## Security boundaries
 

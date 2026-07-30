@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "checkedOn": "2026-07-30",
+  "offlineGate": "PASS",
+  "finalExecution": "RECORDING-ONLY",
+  "recordingPolicyStatus": "recording-only-not-run",
+  "currentVerification": {
+    "unitAndPolicyTests": "115/115 across 14 files",
+    "focusedRecordingPolicy": "8/8",
+    "localMarkdownLinks": "pass",
+    "secretScan": "200 files checked",
+    "diffCheck": "pass"
+  },
+  "readiness": [
+    {
+      "gate": "recording-policy",
+      "status": "PASS",
+      "evidence": "tests/recording-policy.test.ts and artifacts/submission/recording-policy.json",
+      "provenance": "tracked local policy artifact"
+    },
+    {
+      "gate": "final-namespace-absence",
+      "status": "WAITING",
+      "evidence": "just-in-time absence check required before recording",
+      "provenance": "docs/submission/recording-runbook.md"
+    },
+    {
+      "gate": "recipient-and-rule-clarification",
+      "status": "BLOCKED",
+      "evidence": "recipient not supplied; official-rule ambiguities unresolved",
+      "provenance": "docs/submission/dorahacks-copy.md and docs/submission/form-field-map.md"
+    },
+    {
+      "gate": "final-simulation-execution-receipt-audit",
+      "status": "RECORDING-ONLY",
+      "evidence": "no raw final video, plan, execution, receipt, or audit exists",
+      "provenance": "artifacts/submission/recording-policy.json"
+    }
+  ],
+  "finalNamespace": {
+    "plan": ".keeperhub/final-release-plan.json",
+    "state": ".keeperhub/final-release-state.json",
+    "audit": "audit/final-release.jsonl",
+    "video": "artifacts/private/keeperhub-demo-final.mov"
+  }
+}

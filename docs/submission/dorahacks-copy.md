@@ -16,6 +16,8 @@ Agent onboarding fails in ways that look deceptively successful: configuration c
 
 A TypeScript starter for Claude Code, Codex, and Hermes that previews official setup commands, verifies protected REST and authenticated MCP `tools_documentation`, diagnoses failures as `Step / Cause / Fix / Evidence`, and wraps a conditional KeeperHub transfer in strict simulation, exact real-TTY approval, exclusive private state, same-key recovery, KeeperHub completion-evidence validation, and a redacted hash-chain audit. Independent public explorer/RPC receipt verification remains a separate final-evidence step.
 
+Final execution status is `recording-only-not-run`. The final plan/state/audit do not exist: exactly one strict simulation is reserved for the formal raw recording, followed in that same recording by the full summary, independent user authorization, execution, a separate real-TTY confirmation phrase, status, independent receipt verification, and audit verification.
+
 ## Target users
 
 Hackathon builders and Agent developers who need reproducible KeeperHub onboarding, clear failure recovery, and a safety-first route from intent to an auditable onchain outcome.
@@ -33,19 +35,23 @@ The project treats onboarding and execution as one evidence pipeline. “Configu
 - `/api/execute/transfer` with strict boolean simulation, then idempotent execution
 - `/api/execute/{executionId}/status` polling and KeeperHub-returned transaction-hash/link completion evidence
 
-Network: Ethereum Sepolia (`11155111`). Amount: `0.000001 ETH`. Public organization wallet: `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`. Turnkey EOA and spend-cap conclusions are based on official KeeperHub Turnkey documentation plus independent authenticated UI proof, not Doctor alone.
+Network: Ethereum Sepolia (`11155111`). Amount: `0.000001 ETH`. Public organization wallet: `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`. Turnkey EOA and spend-cap conclusions are based on official KeeperHub Turnkey documentation plus a recorded authenticated observation, not Doctor alone. Raw authenticated UI material is unavailable in the public repository.
 
 ## Architecture
 
-Setup adapters feed a structured Doctor and validated KeeperHub client. Release preparation binds a workspace-contained file hash, EOA/Sepolia transfer intent, and strict simulation into digests. Execution requires a real TTY, then creates exclusive mode-0600 state with one idempotency key. Retry/status reuse that key. The CLI accepts KeeperHub completion evidence only when status is completed, success is true, the hash is valid, and the Sepolia Etherscan URL has the exact matching shape; a separate public explorer/RPC receipt check is required for final onchain proof. Every public event joins a redacted JSONL hash chain.
+Setup adapters feed a structured Doctor and validated KeeperHub client. Release preparation binds a workspace-contained file hash, EOA/Sepolia transfer intent, and strict simulation into digests. The final namespace is exactly `.keeperhub/final-release-plan.json`, `.keeperhub/final-release-state.json`, and `audit/final-release.jsonl`; default release paths are non-final rehearsal. Execution follows the single-recording authorization order, creates exclusive mode-0600 state with one idempotency key, and requires a real TTY. Retry/status reuse that key. The CLI accepts KeeperHub completion evidence only when status is completed, success is true, the hash is valid, and the Sepolia Etherscan URL has the exact matching shape; a separate public explorer/RPC receipt check is required for final onchain evidence. Every public event joins a redacted JSONL hash chain.
 
 ## Safety
 
-No private keys, seed phrases, wallet signatures, OAuth tokens, or HMAC secrets are accepted. `KH_API_KEY` comes from the process environment, optionally populated by the ignored mode-0600 `.env` loader; it is never a CLI argument or output. Mainnet and Safe release paths are blocked. Plans expire in ten minutes. HTTP 409 blocks, ambiguous completion never produces a replacement key, and low-level client primitives are explicitly outside the supported release workflow.
+No private keys, seed phrases, wallet signatures, OAuth tokens, or HMAC secrets are accepted. `KH_API_KEY` comes from the process environment, optionally populated by the ignored mode-0600 `.env` loader; it is never a CLI argument or output. Mainnet and Safe release paths are blocked. Plans expire in ten minutes. HTTP 409 blocks, ambiguous completion never produces a replacement key, and low-level client primitives are explicitly outside the supported release workflow. Failure or expiry hard-aborts with no automatic second simulation.
 
 ## Three-Agent onboarding
 
 Claude Code 2.1.207, Codex CLI 0.144.3, and Hermes Agent 0.19.0 each passed one authenticated read-only KeeperHub documentation invocation. Hermes structurally withheld ten write/execute tools; Claude and Codex were read-only by prompt scope, not structural tool removal.
+
+## Upstream contribution
+
+A current minimal patch against KeeperHub CLI v0.13.1 corrects the Quickstart device-login description so it matches the printed URL/code and `hosts.yml` API-key storage behavior. The repository includes the patch, exact-base clean-apply evidence, documentation-generation check, focused Go tests, and a prepared PR draft. It has not been submitted upstream; PR creation requires a separate immediate confirmation. The older v0.10.0 Doctor patch is retained only as historical independent work because equivalent official PR #75 later merged; the no-duplicate decision applies only to that Doctor fix.
 
 ## Reproducibility
 
@@ -56,12 +62,12 @@ node dist/cli.js setup --agent all
 node dist/cli.js doctor --agent all --chain-id 11155111 --json
 ```
 
-The frozen verification evidence records its historical 8-test-file / 62-test gate. Current local quality is 9 test files / 65 tests, including 3 isolated Git-process tests for immutable condition generation. Condition SHA-256: `2cfae70f499548b2a1fd3a5b75c87ba597dacf82b63b4c9c066bc451b9042a46`; evidence source commit: `afcf7028a7fe365760f7df5d76cf64b3e1f80923`.
+The frozen verification evidence records its dated offline and authenticated-live gate. The current delivery gate independently records the latest offline typecheck, unit/policy tests, build, package smoke, secret scan, link, and provenance results. Condition SHA-256: `2cfae70f499548b2a1fd3a5b75c87ba597dacf82b63b4c9c066bc451b9042a46`; evidence source commit: `afcf7028a7fe365760f7df5d76cf64b3e1f80923`.
 
 ## Links and execution status
 
 - Source repository: **Pending — requires the separately authorized publication checkpoint.**
-- Demo video: **Pending — requires a compliant final execution and separately authorized upload checkpoint.**
+- Demo video: **Pending — raw final video unavailable; formal recording has not run.**
 - Final transaction: **Pending — no final recipient, signing, execution, hash, or receipt exists.**
 - DoraHacks submission URL: **Pending — submission has not been authorized or created.**
 - Bounty application URL: **Pending — application has not been authorized or created.**

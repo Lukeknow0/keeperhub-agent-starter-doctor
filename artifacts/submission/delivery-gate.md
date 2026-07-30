@@ -1,29 +1,41 @@
 # Delivery gate
 
-Checked on 2026-07-29 after the condition-generator, upstream-resolution, and judge-material batch.
+Checked on 2026-07-30 after the condition-generator, upstream-resolution, and judge-material batch. Unit, policy, local-link, secret-scan, and diff rows were refreshed after the single-recording materials; package/build/provenance rows retain the recorded offline batch evidence.
 
 ## Result
 
-**PASS — offline release gate**
+**PASS — offline release gate. Final execution: RECORDING-ONLY — NOT RUN.**
 
 | Check | Result |
 | --- | --- |
 | TypeScript typecheck | Pass |
-| Unit tests | Pass — 65/65 tests across 9/9 files |
+| Unit and policy tests | Pass — 115/115 across 14 files |
 | Production build | Pass |
-| Final tracked/untracked secret scan | Pass — 186 files checked |
-| Package contents | Pass — 116 files |
+| Final tracked/untracked secret scan | Pass — 200 files checked |
+| Package contents | Pass — 116-file approved public package surface |
 | Fresh-prefix package smoke test | Pass with npm forced offline |
-| Local Markdown links | Pass — 11 checked, 0 missing |
+| Local Markdown links | Pass — no missing local targets in judge materials |
 | `git diff --check` | Pass |
 | Release-condition SHA-256 | Pass — `2cfae70f499548b2a1fd3a5b75c87ba597dacf82b63b4c9c066bc451b9042a46` |
 | Git-object filename-only secret patterns | Pass — five categories, zero matches |
 | Provenance | Pass — `pre-event-rehearsal` dereferences to `c4d7d2a38e5dea9d607913a384cdf168aec78e9c` and is an ancestor of `hackathon/submission` |
+| Static recording policy | Pass — 8 focused checks; status `recording-only-not-run`, maximum one final simulation |
+
+## Final readiness matrix
+
+| Gate | State | Blocker evidence / provenance |
+| --- | --- | --- |
+| Recording policy and exact namespace | PASS | `artifacts/submission/recording-policy.json`; `tests/recording-policy.test.ts` |
+| Final plan/state/audit absence just before capture | WAITING | Must be checked immediately before recording; defaults are non-final rehearsal |
+| Final recipient and official-rule clarifications | BLOCKED | Recipient not supplied; eligibility/deadline/source-visibility ambiguities recorded in submission copy |
+| Sole final simulation, authorization, execution, receipt, and audit | RECORDING-ONLY | Raw video and all final execution evidence are unavailable because the formal recording has not run |
 
 The managed Codex sandbox denied the default npm cache and `tsx` IPC socket. Those failures occurred before the relevant scripts executed. The same repository checks passed with a writable temporary npm cache, `NPM_CONFIG_OFFLINE=true`, and direct `node --import tsx` invocation; they are environment restrictions, not test failures.
 
 ## Scope
 
 This gate intentionally did **not** repeat the frozen authenticated onboarding, Doctor, UI, online integration, or strict simulation evidence. No KeeperHub write tool, signing request, broadcast, remote creation, push, upload, DoraHacks submission, or bounty application occurred.
+
+The final namespace is exactly `.keeperhub/final-release-plan.json`, `.keeperhub/final-release-state.json`, and `audit/final-release.jsonl`; the video path is `artifacts/private/keeperhub-demo-final.mov`. No final plan or audit may be created before recording. Exactly one strict simulation may run after recording starts, followed by the full summary, independent user authorization, execution, separate real-TTY phrase, status, receipt, and audit. Any failure or expiry hard-aborts with no automatic second simulation.
 
 The final recipient, exact final simulation, real KeeperHub execution, independent public receipt verification, repository URL, video URL, DoraHacks URL, and bounty-application URL remain pending their separately authorized checkpoints.
