@@ -21,8 +21,8 @@ This map contains no private contact values. Team identity, email, wallet owners
 | Immutable source commit URL | `https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/commit/bb78e881eaf1323cf0780b55327d62b333ea8382` | Public publication baseline | Remote page verified on 2026-07-30 | Repository |
 | Demo video URL | `https://youtu.be/EnZ03RbggBc` | Uploaded as unlisted YouTube video; unauthenticated oEmbed and player status checks passed | `artifacts/submission/video-proof-manifest.json`; private `artifacts/private/video/privacy-review.md` | Repository + platform |
 | Final transaction URL | `https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975` | Public, independently verified Success | `artifacts/submission/final-execution.md`; `audit/final-release.jsonl` | KeeperHub + public chain |
-| Main submission URL | Pending | Unavailable | No main submission exists | Platform |
-| Bounty application URL | Pending | Unavailable | No bounty application exists | Platform |
+| Main submission URL | `https://dorahacks.io/buidl/47398` | Submitted; platform status `Under Review` | Main submission independently confirmed and completed on 2026-08-02 | Platform |
+| Bounty application | Best Onboarding UX Improvement via BUIDL 47398 | Platform returned `Saved successfully`; no separate public application URL is exposed | Bounty application independently confirmed and completed on 2026-08-02 | Platform |
 
 ## Private, user-supplied, and external fields
 

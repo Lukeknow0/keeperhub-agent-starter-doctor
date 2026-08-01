@@ -87,9 +87,9 @@ The standalone starter/teardown contribution is the TypeScript package described
 - Final KeeperHub execution/receipt: **Completed and independently verified — [Sepolia receipt](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975).**
 - Repository URL: **[github.com/Lukeknow0/keeperhub-agent-starter-doctor](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor)** — published during the official event window.
 - Demo URL: **https://youtu.be/EnZ03RbggBc** — 170-second privacy-reviewed unlisted YouTube build; unauthenticated playability verified.
-- DoraHacks BUIDL URL: **Pending — no submission exists.**
-- Bounty application URL: **Pending — no application exists.**
+- DoraHacks BUIDL URL: **https://dorahacks.io/buidl/47398 — Under Review.**
+- Bounty application: **Submitted for Best Onboarding UX Improvement using BUIDL 47398.** DoraHacks returned `Saved successfully`; no separate public application URL is exposed.
 
 The receipt ending `...6352` is **pre-event onboarding evidence only**, never final transaction evidence.
 
-Organizer clarification now resolves pre-event prototyping, deadline conversion, Sepolia acceptance, and standalone starter/teardown eligibility; see [the dated addendum](organizer-clarifications-2026-07-30.md). The repository was published during the event before the main submission and separate bounty `Apply`. Main submission and `Apply` remain independent consequential gates and each requires its own immediate confirmation.
+Organizer clarification resolves pre-event prototyping, deadline conversion, Sepolia acceptance, and standalone starter/teardown eligibility; see [the dated addendum](organizer-clarifications-2026-07-30.md). The repository was published during the event before the main submission and separate bounty application. Both consequential actions were independently confirmed and completed on 2026-08-02.

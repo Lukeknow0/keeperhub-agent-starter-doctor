@@ -69,8 +69,8 @@ The frozen verification evidence records its dated offline and authenticated-liv
 - Source repository: **[github.com/Lukeknow0/keeperhub-agent-starter-doctor](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor)** — published during the event; baseline [`bb78e88`](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/commit/bb78e881eaf1323cf0780b55327d62b333ea8382).
 - Demo video: **[Three Agents. One Doctor. Two Safe Retries. One Verified Release.](https://youtu.be/EnZ03RbggBc)** — 170-second privacy-reviewed unlisted YouTube build; unauthenticated playability verified.
 - Final transaction: **[Verified Sepolia receipt](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975).**
-- DoraHacks submission URL: **Pending — submission has not been authorized or created.**
-- Bounty application URL: **Pending — application has not been authorized or created.**
+- DoraHacks submission URL: **[BUIDL 47398](https://dorahacks.io/buidl/47398) — Under Review.**
+- Bounty application: **Submitted for Best Onboarding UX Improvement using BUIDL 47398.** DoraHacks returned `Saved successfully`; the platform exposes no separate public application URL.
 
 The existing transaction ending `...6352` is **pre-event onboarding evidence only** and is excluded from the final-transaction field.
 
@@ -85,7 +85,7 @@ The organizer has resolved the prior rule questions:
 3. a merged PR is not required for the onboarding bounty—a public, well-documented starter or concrete teardown shared during the event is independently eligible;
 4. Sepolia is accepted without a judging penalty.
 
-Sources and project decisions are frozen in [the 2026-07-30 clarification addendum](organizer-clarifications-2026-07-30.md). The repository was published during the event and the privacy-reviewed demo is available via an unlisted YouTube link. Main submission and separate bounty `Apply` still require independent immediate confirmation.
+Sources and project decisions are frozen in [the 2026-07-30 clarification addendum](organizer-clarifications-2026-07-30.md). The repository was published during the event, the privacy-reviewed demo is available via an unlisted YouTube link, BUIDL 47398 is Under Review, and the separately confirmed bounty application has been saved.
 
 ## Judging-criteria map
 

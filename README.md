@@ -98,7 +98,7 @@ Any failed, ambiguous, interrupted, exposed, or expired plan hard-aborts. The co
 - Final transaction: [`0xfcb180…8975`](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975) — independently verified Success.
 - Public repository: **Published during the event — [source](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor), [publication baseline `bb78e88`](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/commit/bb78e881eaf1323cf0780b55327d62b333ea8382).**
 - Demo video: **[Three Agents. One Doctor. Two Safe Retries. One Verified Release.](https://youtu.be/EnZ03RbggBc)** — 170-second privacy-reviewed, unlisted YouTube build; unauthenticated playability verified.
-- DoraHacks submission and bounty application: **Pending — official timing, contribution eligibility, repository publication, and video upload are resolved; submission and bounty `Apply` retain separate immediate checkpoints.**
+- DoraHacks submission: **[BUIDL 47398](https://dorahacks.io/buidl/47398) — Under Review.** The same BUIDL was separately applied to **Best Onboarding UX Improvement**; DoraHacks returned `Saved successfully.`
 
 The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d8df6352` is **pre-event onboarding evidence only**. It is not a final-transaction value.
 
