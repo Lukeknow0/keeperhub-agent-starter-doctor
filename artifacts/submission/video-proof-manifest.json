@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "videoTitle": "Three Agents. One Doctor. Two Safe Retries. One Verified Release.",
+  "evidencePolicy": "Every factual video claim maps to public repository evidence or the public Sepolia receipt. Offline fixtures are labeled and saved execution evidence is never presented as a live recording.",
+  "production": {
+    "status": "local-privacy-reviewed",
+    "durationSeconds": 170.021333,
+    "video": "H.264 1920x1080 30fps",
+    "audio": "AAC 48kHz mono; Hermes Agent Edge TTS; en-US-BrianNeural; speed 0.94",
+    "sampledFrames": 85,
+    "mainSha256": "1656be16e6dfed555b51a1b9c5707273d4d289bf0068a3bd70540b1feb9ffce7",
+    "publicUrl": null
+  },
+  "claims": [
+    {
+      "id": "three-agents",
+      "claim": "Claude Code, Codex, and Hermes each completed an authenticated read-only KeeperHub tool call.",
+      "evidence": ["docs/submission/onboarding-evidence.md"]
+    },
+    {
+      "id": "configured-not-authenticated",
+      "claim": "Configured state is not treated as authenticated proof; the Doctor separately verifies an authenticated tools_documentation call.",
+      "evidence": ["docs/submission/onboarding-evidence.md", "src/commands/doctor.ts", "src/mcp/probe.ts"]
+    },
+    {
+      "id": "preview-first-setup",
+      "claim": "Setup defaults to preview and prints official Agent-specific commands without applying them.",
+      "evidence": ["README.md", "src/agents/setup.ts", "tests/setup.test.ts"]
+    },
+    {
+      "id": "actionable-diagnostics",
+      "claim": "Doctor diagnostics use Step, Cause, Fix, and Evidence fields.",
+      "evidence": ["src/core/output.ts", "tests/doctor.test.ts", "README.md"]
+    },
+    {
+      "id": "eleven-blockers",
+      "claim": "The onboarding teardown contains 11 ranked, reproducible blockers.",
+      "evidence": ["docs/rehearsal-report.md", "docs/submission/bounty-copy.md"]
+    },
+    {
+      "id": "automated-tests",
+      "claim": "The frozen offline delivery gate records 115 of 115 automated tests passing.",
+      "evidence": ["artifacts/submission/delivery-gate.json", "artifacts/submission/delivery-gate.md"]
+    },
+    {
+      "id": "quickstart-patch",
+      "claim": "An upstream-ready Quickstart documentation patch applies cleanly and has focused Go-test evidence.",
+      "evidence": ["patches/keeperhub-cli-quickstart-auth.patch", "artifacts/upstream/quickstart-patch-validation.txt", "artifacts/upstream/quickstart-focused-tests.txt", "docs/upstream-quickstart-pr-draft.md"]
+    },
+    {
+      "id": "keeperhub-layer",
+      "claim": "KeeperHub supplies authenticated MCP, the organization wallet execution path, strict simulation, idempotent direct execution, and completion status for the demonstrated release.",
+      "evidence": ["docs/submission/onboarding-evidence.md", "artifacts/submission/final-execution.md", "audit/final-release.jsonl", "src/keeperhub/client.ts", "src/release/service.ts"]
+    },
+    {
+      "id": "condition-and-confirmation",
+      "claim": "The final release was bound to a satisfied file SHA-256 condition, a simulation and plan digest, and a real-TTY exact confirmation step.",
+      "evidence": ["audit/final-release.jsonl", "artifacts/submission/release-condition.json", "src/release/confirm.ts", "src/release/service.ts"]
+    },
+    {
+      "id": "two-retries-one-release",
+      "claim": "The saved audit contains two retry events followed by one submit, one completed status, and one receipt; both retries use the same redacted idempotency digest.",
+      "evidence": ["audit/final-release.jsonl", "artifacts/submission/final-execution.md"]
+    },
+    {
+      "id": "verified-receipt",
+      "claim": "The final KeeperHub release completed on Ethereum Sepolia with transaction hash 0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975.",
+      "evidence": ["artifacts/submission/final-execution.md", "audit/final-release.jsonl", "https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975"]
+    },
+    {
+      "id": "eip7702-verification",
+      "claim": "Because the receipt is EIP-7702, verification combines Success, decoded execute arguments, and state differences rather than equating outer relayer fields with the release intent.",
+      "evidence": ["artifacts/submission/final-execution.md", "https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975"]
+    },
+    {
+      "id": "audit-integrity",
+      "claim": "Offline audit verification succeeds for 8 records with head 7781ff8fd7ab794777ae3d9189960d7e5825ff39db38f83fc02a3f0a3665ebaa.",
+      "evidence": ["audit/final-release.jsonl", "src/release/audit.ts", "tests/audit.test.ts"]
+    }
+  ]
+}

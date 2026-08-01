@@ -14,9 +14,9 @@ Agent onboarding fails in ways that look deceptively successful: configuration c
 
 ## Solution
 
-A TypeScript starter for Claude Code, Codex, and Hermes that previews official setup commands, verifies protected REST and authenticated MCP `tools_documentation`, diagnoses failures as `Step / Cause / Fix / Evidence`, and wraps a conditional KeeperHub transfer in strict simulation, exact real-TTY approval, exclusive private state, same-key recovery, KeeperHub completion-evidence validation, and a redacted hash-chain audit. Independent public explorer/RPC receipt verification remains a separate final-evidence step.
+A TypeScript starter for Claude Code, Codex, and Hermes that previews official setup commands, verifies protected REST and authenticated MCP `tools_documentation`, diagnoses failures as `Step / Cause / Fix / Evidence`, and wraps a conditional KeeperHub transfer in strict simulation, exact real-TTY approval, exclusive private state, same-key recovery, KeeperHub completion-evidence validation, a redacted hash-chain audit, and independent public receipt verification.
 
-Final execution status is `recording-only-not-run`. The final plan/state/audit do not exist: exactly one strict simulation is reserved for the formal raw recording, followed in that same recording by the full summary, independent user authorization, execution, a separate real-TTY confirmation phrase, status, independent receipt verification, and audit verification.
+Final execution status is `completed-and-verified`. One approved Sepolia release passed strict simulation and exact human confirmation, reused one request identity through two safe retries, completed once through KeeperHub, and produced an independently verified public receipt plus an eight-record redacted audit chain.
 
 ## Target users
 
@@ -66,9 +66,9 @@ The frozen verification evidence records its dated offline and authenticated-liv
 
 ## Links and execution status
 
-- Source repository: **Pending — requires the separately authorized publication checkpoint.**
-- Demo video: **Pending — raw final video unavailable; formal recording has not run.**
-- Final transaction: **Pending — no final recipient, signing, execution, hash, or receipt exists.**
+- Source repository: **[github.com/Lukeknow0/keeperhub-agent-starter-doctor](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor)** — published during the event; baseline [`bb78e88`](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/commit/bb78e881eaf1323cf0780b55327d62b333ea8382).
+- Demo video: **Local 170-second privacy-reviewed build ready; public URL pending upload.**
+- Final transaction: **[Verified Sepolia receipt](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975).**
 - DoraHacks submission URL: **Pending — submission has not been authorized or created.**
 - Bounty application URL: **Pending — application has not been authorized or created.**
 
@@ -76,7 +76,7 @@ The existing transaction ending `...6352` is **pre-event onboarding evidence onl
 
 ## Limitations and organizer clarifications
 
-The CLI controls are not an OS sandbox; Claude/Codex write-tool restriction was prompt-scoped; redaction and a local hash chain do not replace host security or external notarization. Final execution also requires a distinct approved recipient and exact human confirmation.
+The CLI controls are not an OS sandbox; Claude/Codex write-tool restriction was prompt-scoped; redaction and a local hash chain do not replace host security or external notarization. The completed final execution used a distinct approved recipient and exact human confirmation.
 
 The organizer has resolved the prior rule questions:
 
@@ -85,15 +85,15 @@ The organizer has resolved the prior rule questions:
 3. a merged PR is not required for the onboarding bounty—a public, well-documented starter or concrete teardown shared during the event is independently eligible;
 4. Sepolia is accepted without a judging penalty.
 
-Sources and project decisions are frozen in [the 2026-07-30 clarification addendum](organizer-clarifications-2026-07-30.md). The chosen sequence is conservative: publish the repository during the event before the main submission and separate bounty `Apply`. Those external actions still require independent immediate confirmation.
+Sources and project decisions are frozen in [the 2026-07-30 clarification addendum](organizer-clarifications-2026-07-30.md). The repository was published during the event. Video upload, main submission, and separate bounty `Apply` still require independent immediate confirmation.
 
 ## Judging-criteria map
 
 | Criterion | Evidence |
 | --- | --- |
-| KeeperHub onchain execution | Implemented conditional execution/status/completion-evidence path; independent public receipt verification and **final real execution remain pending separately authorized checkpoints** |
-| KeeperHub feature depth | Hosted MCP, official Hermes plugin, protected REST, strict simulation, direct execution, idempotency, polling, completion-evidence validation, audit; independent public receipt verification remains pending |
+| KeeperHub onchain execution | One real condition-bound Sepolia release completed through KeeperHub; [independent receipt](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975) and redacted audit are public |
+| KeeperHub feature depth | Hosted MCP, official Hermes plugin, protected REST, strict simulation, direct execution, idempotency, polling, completion-evidence validation, public receipt, and audit |
 | Reliability and observability | Structured Doctor contract, strict schemas, intent/plan/state digests, same-key recovery, ambiguity stop, verified hash-chain audit, and clearly labeled deterministic retry/Gas/error-state tests |
 | Originality and usefulness | Three-Agent onboarding plus evidence-category separation and a digest-bound human release protocol |
 | Integration quality / developer experience | Five-command clean-clone preview, explicit apply/authentication/Doctor steps, copyable fixes, package smoke test, blocker teardown |
-| Working transactions, not mockups | Pre-event receipt is disclosed only as onboarding evidence; the required final KeeperHub Sepolia receipt remains pending |
+| Working transactions, not mockups | The pre-event receipt remains onboarding-only; the distinct final KeeperHub Sepolia receipt is public and independently verified |

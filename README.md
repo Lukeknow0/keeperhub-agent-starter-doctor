@@ -1,18 +1,18 @@
 # KeeperHub Agent Starter + Doctor
 
-A safety-first TypeScript starter for taking Claude Code, Codex, or Hermes from a fresh machine to an authenticated KeeperHub dry-run, with actionable diagnostics and a human-confirmed conditional bounty release path.
+[![CI](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/actions/workflows/ci.yml)
 
-> Provenance disclosure: the private pre-event research and implementation baseline is preserved at tag `pre-event-rehearsal` (commit `c4d7d2a38e5dea9d607913a384cdf168aec78e9c`). Submission work is developed transparently on `hackathon/submission` after the conservative opening boundary. The earlier transaction remains onboarding evidence and is never represented as the final hackathon transaction.
+For Claude Code, Codex, and Hermes builders, “configured” can look authenticated and an ambiguous retry can duplicate a transfer. In the first 30 seconds, this starter previews all three setup paths and turns a failed check into `Step / Cause / Fix / Evidence`.
 
-The organizer later clarified that pre-event exploration/prototyping is allowed when the work is submitted and any upstream PR is opened during the event. The [dated organizer-clarification addendum](docs/submission/organizer-clarifications-2026-07-30.md) also resolves the deadline and confirms that Sepolia is accepted without a judging penalty.
+**One path:** fragile multi-Agent onboarding → diagnosable authentication → a condition-bound, human-confirmed, safely recoverable KeeperHub Sepolia release → an independently verified receipt.
 
 ## Hackathon submission
 
 KeeperHub Agent Starter + Doctor turns a fragile, multi-Agent onboarding path into a short, diagnosable route from clean clone to authenticated read-only proof and a human-controlled conditional Sepolia release.
 
-**Best Onboarding UX Improvement fit:** the project combines copyable setup adapters, a structured `Step / Cause / Fix / Evidence` Doctor, a reproducible blocker teardown, and a safety workflow toward a final transaction without hiding authentication, wallet, or retry state. It also targets the main prize through KeeperHub execution, strict simulation, exact human approval, idempotent recovery, KeeperHub completion validation, and a tamper-evident audit trail. Independent public explorer/RPC receipt verification remains a separate final-submission checkpoint.
+**Best Onboarding UX Improvement fit:** the project combines copyable setup adapters, a structured `Step / Cause / Fix / Evidence` Doctor, and a reproducible blocker teardown. It also targets the main prize through a real KeeperHub execution, strict simulation, exact human approval, same-key recovery, KeeperHub completion validation, a tamper-evident audit trail, and an independently verified public receipt.
 
-**Final execution status: `recording-only-not-run`.** No final simulation may occur before the formal raw screen recording. During that one recording, exactly one strict `simulate: true` prepare may run, followed by the full summary, independent user authorization, execution, a separate real-TTY `CONFIRM` phrase, status, independent receipt verification, and final audit verification. See the [single-recording runbook](docs/submission/recording-runbook.md).
+**Final execution status: `completed-and-verified`.** The KeeperHub Sepolia release completed after exact user authorization and a separate real-TTY confirmation. Two safe retry events reused one redacted idempotency digest; one transaction completed; the public receipt and eight-record audit chain verify the outcome. See [final execution evidence](artifacts/submission/final-execution.md) and the [Sepolia receipt](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975).
 
 ### Verified three-Agent support
 
@@ -27,14 +27,14 @@ Full evidence and its limitations are in [the onboarding matrix](docs/submission
 ### Five-command clean-clone preview, then authentication and Doctor
 
 ```bash
-git clone <repository-url> keeperhub-agent-starter-doctor
+git clone https://github.com/Lukeknow0/keeperhub-agent-starter-doctor.git
 cd keeperhub-agent-starter-doctor
 npm ci
 npm run build
 node dist/cli.js setup --agent all
 ```
 
-`Repository URL: Pending — requires the separately authorized publication checkpoint.`
+Repository: [github.com/Lukeknow0/keeperhub-agent-starter-doctor](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor)
 
 Those five commands end at a non-mutating setup preview. Review it, apply only the Agent path you need, complete its documented OAuth/API-key authentication, then run Doctor:
 
@@ -89,18 +89,22 @@ shasum -a 256 artifacts/submission/release-condition.json
 
 The condition binds verification/onboarding evidence from source commit `afcf7028a7fe365760f7df5d76cf64b3e1f80923`. The organization wallet address is `0x9b5f9ac9bd9e178962a50582f2b42b5523fcd042`; its Turnkey EOA semantics and absence of a configured Safe are supported by official Turnkey documentation plus a recorded authenticated observation, not by Doctor alone. Raw authenticated UI evidence is unavailable in the public repository.
 
-The only final namespace is `.keeperhub/final-release-plan.json`, `.keeperhub/final-release-state.json`, and `audit/final-release.jsonl`. Those paths must be absent before capture and may be created only in the order defined by the runbook. The default `.keeperhub/release-plan.json`, `.keeperhub/release-state.json`, and `audit/release.jsonl` paths are non-final rehearsal paths.
+The only final namespace was `.keeperhub/final-release-plan.json`, `.keeperhub/final-release-state.json`, and `audit/final-release.jsonl`. The private plan/state stayed local; the redacted [final audit](audit/final-release.jsonl) is public. The default `.keeperhub/release-plan.json`, `.keeperhub/release-state.json`, and `audit/release.jsonl` paths remain non-final rehearsal paths.
 
-Any failed, ambiguous, interrupted, exposed, or expired take hard-aborts. There is no automatic second simulation; a new attempt requires a new formal recording and readiness decision.
+Any failed, ambiguous, interrupted, exposed, or expired plan hard-aborts. The completed execution used one approved plan and no second simulation.
 
-- Final recipient: **Pending — not supplied.**
-- Final signing/execution: **Pending — requires the separately authorized checkpoint.**
-- Final transaction hash and explorer link: **Pending — no final transaction exists.**
-- Public repository: **Pending — requires the separately authorized publication checkpoint.**
-- Demo video: **Pending — raw final video unavailable; formal recording has not run.**
-- DoraHacks submission and bounty application: **Pending — official timing and contribution eligibility are resolved; publication, submission, and bounty `Apply` each require their own immediate checkpoint.**
+- Final recipient: `0x7c1569bf1384d6ffec460ac36b671c2998fdcffb`.
+- Final signing/execution: **Completed through KeeperHub on Ethereum Sepolia.**
+- Final transaction: [`0xfcb180…8975`](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975) — independently verified Success.
+- Public repository: **Published during the event — [source](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor), [publication baseline `bb78e88`](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/commit/bb78e881eaf1323cf0780b55327d62b333ea8382).**
+- Demo video: **Local 170-second privacy-reviewed build ready; public URL pending separately approved upload.**
+- DoraHacks submission and bounty application: **Pending — official timing, contribution eligibility, and repository publication are resolved; video upload, submission, and bounty `Apply` each require their own immediate checkpoint.**
 
 The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d8df6352` is **pre-event onboarding evidence only**. It is not a final-transaction value.
+
+### Provenance and rule status
+
+The private pre-event research and implementation baseline is preserved at tag `pre-event-rehearsal` (commit `c4d7d2a38e5dea9d607913a384cdf168aec78e9c`). Submission work is developed transparently on `hackathon/submission` after the conservative opening boundary. The organizer later clarified that pre-event exploration/prototyping is allowed when the work is submitted and any upstream PR is opened during the event; the [dated clarification addendum](docs/submission/organizer-clarifications-2026-07-30.md) also resolves the deadline and confirms that Sepolia is accepted without a judging penalty.
 
 ### Judge map
 
@@ -112,8 +116,8 @@ The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d
 - [Ranked blockers and bounty copy](docs/submission/bounty-copy.md)
 - [Current Quickstart auth patch](patches/keeperhub-cli-quickstart-auth.patch), [clean-apply evidence](artifacts/upstream/quickstart-patch-validation.txt), [focused tests](artifacts/upstream/quickstart-focused-tests.txt), and [prepared PR draft](docs/upstream-quickstart-pr-draft.md)
 - [Historical Doctor patch evidence](artifacts/upstream/README.md) and [PR #75 resolution](docs/upstream-pr-draft.md)
-- [Flexible one-take demo script](docs/submission/demo-script.md)
-- [Single-recording runbook](docs/submission/recording-runbook.md) and [machine-readable policy](artifacts/submission/recording-policy.json)
+- [Preserved pre-execution demo script](docs/submission/demo-script.md), [runbook](docs/submission/recording-runbook.md), and [machine-readable policy](artifacts/submission/recording-policy.json) — historical safety contract, not current execution status
+- [Final English narration](docs/submission/video-narration-en.md), [Chinese transcript](docs/submission/video-narration-zh.md), and [video proof manifest](artifacts/submission/video-proof-manifest.json)
 - [Prepared DoraHacks form-field map](docs/submission/form-field-map.md)
 - [DoraHacks copy](docs/submission/dorahacks-copy.md)
 
@@ -298,8 +302,8 @@ This transaction occurred before the event and is not represented as the final s
 | P0 | `kh doctor` reports authenticated for HTTP 200 `null` | Independently reproduced on 2026-07-14; official equivalent fix later merged in [PR #75](https://github.com/KeeperHub/cli/pull/75) | Resolved upstream with a protected credential probe |
 | P1 | Doctor protected checks omit Bearer auth | Independently reproduced on 2026-07-14; [PR #75](https://github.com/KeeperHub/cli/pull/75) now resolves/sends `Authorization` | Resolved upstream with authenticated client/probe handling |
 | P1 | Hermes direct OAuth connects with zero tools | Add hosted MCP with OAuth; logs show an async-lock exception | Recommend/fix the official plugin path |
-| P1 | Wallet balance decoder expects string `chainId` | Recorded API response used a numeric `chainId` | Accept number or string |
-| P1 | Wallet field mismatch | Doctor expects `address`; recorded response used `walletAddress` | Parse the recorded field with compatibility fallback |
+| P1 | Wallet response shape mismatch | Recorded API response used numeric `chainId` and `walletAddress` | Accept number/string chain IDs and the recorded address field |
+| P1 | Hermes footer/tool-count discrepancy | Footer showed two tool calls while canonical metadata contained one | Use canonical redacted session metadata as evidence |
 | P1 | macOS Gatekeeper rejects the release binary | Install with Homebrew and run the binary | Correct signing/notarization |
 | P2 | Insufficient balance simulation is opaque | Simulate an amount above the wallet balance | Surface a clear balance diagnosis |
 | P2 | `KH_CONFIG_DIR` is documented but ignored | Set it during login; files still go to the XDG directory | Implement or remove it |

@@ -2,6 +2,14 @@
   "name": "keeperhub-agent-starter",
   "version": "0.1.0",
   "description": "A safe KeeperHub starter and onboarding doctor for Claude Code, Codex, and Hermes.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lukeknow0/keeperhub-agent-starter-doctor.git"
+  },
+  "homepage": "https://github.com/Lukeknow0/keeperhub-agent-starter-doctor#readme",
+  "bugs": {
+    "url": "https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/issues"
+  },
   "type": "module",
   "private": true,
   "main": "./dist/index.js",

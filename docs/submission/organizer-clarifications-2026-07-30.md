@@ -19,7 +19,7 @@ The rule questions above are resolved. The remaining blockers are operational, n
 1. the user supplies and approves a distinct final recipient;
 2. the formal one-take recording starts before the sole final `simulate: true`;
 3. the user independently authorizes the exact simulated summary before execution;
-4. repository publication, video upload, DoraHacks `Submit`, and bounty `Apply` each receive their own immediate confirmation.
+4. repository publication received its independent confirmation and completed during the event; video upload, DoraHacks `Submit`, and bounty `Apply` still require their own immediate confirmations.
 
 The existing pre-event transaction remains onboarding evidence only. It is not combined with, substituted for, or entered as the final transaction.
 

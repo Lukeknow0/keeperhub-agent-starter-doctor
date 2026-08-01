@@ -17,7 +17,7 @@ node dist/cli.js doctor --agent all --chain-id 11155111
 
 Setup renders the official Claude, Codex, and Hermes commands before applying anything. Doctor then separates persisted configuration, protected REST authentication, MCP reachability, authenticated `tools_documentation`, chain/wallet/Gas/billing reads, and strict simulation. A failed check returns `Step / Cause / Fix / Evidence`, so the builder gets a copyable repair path instead of a false “connected” state.
 
-After onboarding, the final workflow is condition → formal raw recording → exactly one strict simulation → full summary → independent user authorization → execution → separate real-TTY confirmation → exclusive mode-0600 state → same-key retry/poll → KeeperHub completion-evidence validation → independent public explorer/RPC receipt verification → final hash-chain audit. Status is `recording-only-not-run`; failure or expiry hard-aborts with no automatic second simulation.
+After onboarding, the final workflow is condition → strict simulation → full summary → independent user authorization → launch `release execute` → separate real-TTY confirmation → exclusive mode-0600 state → KeeperHub execution/status → same-key recovery → independent public-chain verification → final hash-chain audit. The completed Sepolia release followed that path; failure or expiry still hard-aborts with no automatic second simulation.
 
 The exact final namespace is `.keeperhub/final-release-plan.json`, `.keeperhub/final-release-state.json`, and `audit/final-release.jsonl`. The default plan/state/audit paths are non-final rehearsal only.
 
@@ -83,13 +83,13 @@ The standalone starter/teardown contribution is the TypeScript package described
 
 ## Transaction and application status
 
-- Final recipient: **Pending — not supplied.**
-- Final KeeperHub execution/receipt: **RECORDING-ONLY — NOT RUN; requires the one formal recording, exact-summary authorization, separate real-TTY phrase, status, receipt, and audit.**
-- Repository URL: **Pending — requires the separately authorized publication checkpoint.**
-- Demo URL: **Pending — raw final video unavailable; formal recording has not run.**
+- Final recipient: `0x7c1569bf1384d6ffec460ac36b671c2998fdcffb`.
+- Final KeeperHub execution/receipt: **Completed and independently verified — [Sepolia receipt](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975).**
+- Repository URL: **[github.com/Lukeknow0/keeperhub-agent-starter-doctor](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor)** — published during the official event window.
+- Demo URL: **Pending upload — local 170-second privacy-reviewed build is ready.**
 - DoraHacks BUIDL URL: **Pending — no submission exists.**
 - Bounty application URL: **Pending — no application exists.**
 
 The receipt ending `...6352` is **pre-event onboarding evidence only**, never final transaction evidence.
 
-Organizer clarification now resolves pre-event prototyping, deadline conversion, Sepolia acceptance, and standalone starter/teardown eligibility; see [the dated addendum](organizer-clarifications-2026-07-30.md). The repository will be published during the event before the main submission and separate bounty `Apply`. Publication, main submission, and `Apply` remain independent consequential gates and each requires its own immediate confirmation.
+Organizer clarification now resolves pre-event prototyping, deadline conversion, Sepolia acceptance, and standalone starter/teardown eligibility; see [the dated addendum](organizer-clarifications-2026-07-30.md). The repository was published during the event before the main submission and separate bounty `Apply`. Main submission and `Apply` remain independent consequential gates and each requires its own immediate confirmation.

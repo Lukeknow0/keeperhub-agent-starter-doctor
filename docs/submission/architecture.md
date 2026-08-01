@@ -69,5 +69,6 @@ Wallet conclusions use two independent sources: official KeeperHub Turnkey docum
 - Three authenticated read-only Agent invocations passed: Claude, Codex, and Hermes.
 - The frozen verification record truthfully preserves its dated offline and live gate without being rerun for presentation.
 - The current delivery gate records the latest offline result without reusing stale file/test counts.
-- Final recipient, signing, execution, receipt, audit, public repository, video, and submission URLs: **Pending — status `recording-only-not-run`; require later separately authorized checkpoints.**
+- Public repository and immutable publication baseline: **Published and verified** at [github.com/Lukeknow0/keeperhub-agent-starter-doctor](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor), baseline [`bb78e88`](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/commit/bb78e881eaf1323cf0780b55327d62b333ea8382).
+- Final recipient, KeeperHub execution, independent receipt, and redacted audit: **Completed and verified.** Video upload and submission URLs remain pending their separately authorized external actions.
 - The pre-event onboarding receipt is evidence of onboarding and idempotent replay only; it is not final submission execution evidence.

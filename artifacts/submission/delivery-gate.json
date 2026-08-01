@@ -1,14 +1,19 @@
 {
   "schemaVersion": 1,
-  "checkedOn": "2026-07-30",
+  "checkedOn": "2026-08-01",
   "offlineGate": "PASS",
-  "finalExecution": "RECORDING-ONLY",
-  "recordingPolicyStatus": "recording-only-not-run",
+  "finalExecution": "COMPLETED-AND-VERIFIED",
+  "recordingPolicyStatus": "historical-pre-execution-policy-satisfied",
   "currentVerification": {
+    "fullOfflineVerify": "pass",
+    "typecheck": "pass",
     "unitAndPolicyTests": "115/115 across 14 files",
+    "build": "pass",
     "focusedRecordingPolicy": "8/8",
     "localMarkdownLinks": "pass",
-    "secretScan": "201 files checked",
+    "secretScan": "209 files checked",
+    "packageContents": "116 files",
+    "freshPrefixPackageSmoke": "pass with npm forced offline",
     "diffCheck": "pass"
   },
   "readiness": [
@@ -20,8 +25,8 @@
     },
     {
       "gate": "final-namespace-absence",
-      "status": "WAITING",
-      "evidence": "just-in-time absence check required before recording",
+      "status": "PASS",
+      "evidence": "pre-execution absence check completed; private plan/state were not published",
       "provenance": "docs/submission/recording-runbook.md"
     },
     {
@@ -31,22 +36,34 @@
       "provenance": "docs/submission/organizer-clarifications-2026-07-30.md"
     },
     {
+      "gate": "public-repository",
+      "status": "PASS",
+      "evidence": "https://github.com/Lukeknow0/keeperhub-agent-starter-doctor",
+      "provenance": "publication baseline bb78e881eaf1323cf0780b55327d62b333ea8382"
+    },
+    {
       "gate": "final-recipient",
-      "status": "BLOCKED",
-      "evidence": "recipient not supplied",
-      "provenance": "artifacts/submission/release-condition.json intentionally contains no recipient"
+      "status": "PASS",
+      "evidence": "0x7c1569bf1384d6ffec460ac36b671c2998fdcffb supplied and independently authorized",
+      "provenance": "artifacts/submission/final-execution.md"
     },
     {
       "gate": "final-simulation-execution-receipt-audit",
-      "status": "RECORDING-ONLY",
-      "evidence": "no raw final video, plan, execution, receipt, or audit exists",
-      "provenance": "artifacts/submission/recording-policy.json"
+      "status": "PASS",
+      "evidence": "KeeperHub execution completed; public Sepolia receipt and eight-record redacted audit verified",
+      "provenance": "artifacts/submission/final-execution.md and audit/final-release.jsonl"
+    },
+    {
+      "gate": "video-publication",
+      "status": "WAITING",
+      "evidence": "170-second local privacy-reviewed video ready; public URL pending",
+      "provenance": "artifacts/submission/video-proof-manifest.json"
     }
   ],
   "finalNamespace": {
     "plan": ".keeperhub/final-release-plan.json",
     "state": ".keeperhub/final-release-state.json",
     "audit": "audit/final-release.jsonl",
-    "video": "artifacts/private/keeperhub-demo-final.mov"
+    "video": "artifacts/private/video/keeperhub-demo-preview.mp4"
   }
 }

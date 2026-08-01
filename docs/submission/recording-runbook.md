@@ -1,6 +1,6 @@
 # Single-recording final execution runbook
 
-Status: **RECORDING-ONLY — NOT RUN**
+Historical status snapshot: **RECORDING-ONLY — NOT RUN**. This pre-execution safety contract is retained for provenance; see [final execution evidence](../../artifacts/submission/final-execution.md) for the completed current state.
 
 This runbook supersedes every older final-execution command sequence. Older commands in the implementation plan are historical provenance and are non-runnable. The only final namespace is:
 
@@ -86,7 +86,7 @@ Show KeeperHub status and its matching execution ID/hash/link.
 
 ## Independent public receipt verification
 
-Using the already-displayed transaction hash, independently open the matching Ethereum Sepolia transaction in a public explorer or query it through an independent public RPC. Confirm the chain is Sepolia, the receipt succeeded, and the hash, sender, recipient, and amount match the authorized plan. This check is external evidence; it is not emitted by the CLI or appended as a native audit event.
+Using the already-displayed transaction hash, independently open the matching Ethereum Sepolia transaction in a public explorer. If using public RPC instead, verify Sepolia chain context, call `eth_getTransactionByHash` for hash/from/to/value, and call `eth_getTransactionReceipt` for successful status. Confirm the independent transaction and receipt together match the authorized sender, recipient, amount, and hash. This check is external evidence; it is not emitted by the CLI or appended as a native audit event.
 
 ## Audit verification
 

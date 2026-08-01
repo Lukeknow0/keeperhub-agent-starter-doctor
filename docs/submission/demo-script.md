@@ -1,12 +1,20 @@
 # Demo script — one continuous raw take
 
-Status: **RECORDING-ONLY — NOT RUN.** Official timing and contribution eligibility are resolved; the final recipient remains blocked. This script uses one continuous raw screen recording saved as `artifacts/private/keeperhub-demo-final.mov`. No final simulation, final plan, final state, or final audit may exist before capture.
+Historical status snapshot: **RECORDING-ONLY — NOT RUN.** This file preserves the pre-execution safety plan and is not the current project status. Current outcome: [final execution completed and verified](../../artifacts/submission/final-execution.md); the submission video is a privacy-reviewed post-execution walkthrough.
 
 The exact final namespace is `.keeperhub/final-release-plan.json`, `.keeperhub/final-release-state.json`, and `audit/final-release.jsonl`. Default release paths are non-final rehearsal only.
 
 ## Flexible shot sequence
 
 The segment lengths are intentionally flexible. Keep the final edit concise, but let authentication evidence, the complete transaction summary, human authorization, public receipt verification, and privacy-safe transitions remain readable.
+
+### First 30 seconds — required
+
+- **0–5s:** title plus the one-path promise.
+- **5–18s:** show one preview command expanding into Claude, Codex, and Hermes setup paths.
+- **18–30s:** show one `Step / Cause / Fix / Evidence` Doctor card and the condition → KeeperHub → independent receipt flow.
+
+**Voice:** “For Claude Code, Codex, and Hermes builders, configured can look authenticated and retry ambiguity can duplicate a transfer. This starter gives one preview-first setup and actionable diagnosis. KeeperHub provides authenticated simulation, idempotent Sepolia execution, and completion status that we match to an independent receipt.”
 
 ### Problem and promise
 
@@ -60,7 +68,7 @@ The segment lengths are intentionally flexible. Keep the final edit concise, but
 
 ### Independent receipt, final audit, and bounty
 
-**Screen A:** KeeperHub completion output, then a separate independent public explorer/RPC check of the matching successful Sepolia receipt, then `node dist/cli.js audit verify audit/final-release.jsonl`.
+**Screen A:** KeeperHub completion output, then a separate public-explorer check; if using RPC, show both transaction-by-hash fields and the successful receipt in Sepolia context. Then run `node dist/cli.js audit verify audit/final-release.jsonl`.
 
 **Status:** **Pending — no final transaction hash or receipt exists.**
 
