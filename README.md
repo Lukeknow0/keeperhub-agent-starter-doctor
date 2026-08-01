@@ -97,8 +97,8 @@ Any failed, ambiguous, interrupted, exposed, or expired plan hard-aborts. The co
 - Final signing/execution: **Completed through KeeperHub on Ethereum Sepolia.**
 - Final transaction: [`0xfcb180…8975`](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975) — independently verified Success.
 - Public repository: **Published during the event — [source](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor), [publication baseline `bb78e88`](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor/commit/bb78e881eaf1323cf0780b55327d62b333ea8382).**
-- Demo video: **Local 170-second privacy-reviewed build ready; public URL pending separately approved upload.**
-- DoraHacks submission and bounty application: **Pending — official timing, contribution eligibility, and repository publication are resolved; video upload, submission, and bounty `Apply` each require their own immediate checkpoint.**
+- Demo video: **[Three Agents. One Doctor. Two Safe Retries. One Verified Release.](https://youtu.be/EnZ03RbggBc)** — 170-second privacy-reviewed, unlisted YouTube build; unauthenticated playability verified.
+- DoraHacks submission and bounty application: **Pending — official timing, contribution eligibility, repository publication, and video upload are resolved; submission and bounty `Apply` retain separate immediate checkpoints.**
 
 The earlier receipt `0x35e132ed013188f0a6a60ebbe4b632c7cd843ccacfa8eb621d95aa70d8df6352` is **pre-event onboarding evidence only**. It is not a final-transaction value.
 

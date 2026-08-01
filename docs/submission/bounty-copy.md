@@ -86,7 +86,7 @@ The standalone starter/teardown contribution is the TypeScript package described
 - Final recipient: `0x7c1569bf1384d6ffec460ac36b671c2998fdcffb`.
 - Final KeeperHub execution/receipt: **Completed and independently verified — [Sepolia receipt](https://sepolia.etherscan.io/tx/0xfcb18018db0969f984489332ee605f532acb052ce8a22b88880ef95147288975).**
 - Repository URL: **[github.com/Lukeknow0/keeperhub-agent-starter-doctor](https://github.com/Lukeknow0/keeperhub-agent-starter-doctor)** — published during the official event window.
-- Demo URL: **Pending upload — local 170-second privacy-reviewed build is ready.**
+- Demo URL: **https://youtu.be/EnZ03RbggBc** — 170-second privacy-reviewed unlisted YouTube build; unauthenticated playability verified.
 - DoraHacks BUIDL URL: **Pending — no submission exists.**
 - Bounty application URL: **Pending — no application exists.**
 
